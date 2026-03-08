@@ -8,6 +8,7 @@ import AspectInsights from "@/components/AspectInsights";
 import TopKeywords from "@/components/TopKeywords";
 import SampleReviews from "@/components/SampleReviews";
 import AnalysisHistory from "@/components/AnalysisHistory";
+import ModelEvaluation from "@/components/ModelEvaluation";
 import { analyzeSingleReview, analyzeCsvReviews, analyzeScrapedReviews, fetchAnalysisHistory } from "@/lib/api";
 import type { AnalysisResult } from "@/lib/types";
 import { Brain, AlertCircle } from "lucide-react";
@@ -145,9 +146,10 @@ const Index = () => {
               ) : null}
             </div>
 
-            {/* Row 3: Sample Reviews */}
+            {/* Row 3: Sample Reviews + Model Evaluation */}
             <div className="grid gap-6 lg:grid-cols-2">
               <SampleReviews predictions={result.predictions} />
+              <ModelEvaluation predictions={result.predictions} distribution={result.distribution} />
             </div>
           </div>
         )}
