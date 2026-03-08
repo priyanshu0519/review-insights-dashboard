@@ -102,3 +102,12 @@ export async function fetchAnalysisHistory() {
   if (error) throw new Error(error.message);
   return data || [];
 }
+
+export async function deleteAnalysisSession(id: string) {
+  const { error } = await supabase
+    .from("analysis_sessions")
+    .delete()
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+}
