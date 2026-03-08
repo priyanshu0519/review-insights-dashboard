@@ -19,17 +19,17 @@ async function saveSession(
   title?: string
 ) {
   try {
-    await supabase.from("analysis_sessions").insert({
+    await supabase.from("analysis_sessions").insert([{
       source_type: sourceType,
       source_url: sourceUrl || null,
       title: title || null,
       total_analyzed: result.totalAnalyzed,
       average_confidence: result.averageConfidence,
-      distribution: result.distribution,
-      aspect_summary: result.aspectSummary,
-      word_frequencies: result.wordFrequencies,
-      predictions: result.predictions,
-    });
+      distribution: result.distribution as any,
+      aspect_summary: result.aspectSummary as any,
+      word_frequencies: result.wordFrequencies as any,
+      predictions: result.predictions as any,
+    }]);
   } catch (err) {
     console.error("Failed to save session:", err);
   }
