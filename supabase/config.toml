@@ -2,3 +2,6 @@ project_id = "xpmmkmtzczerwrlbprcf"
 
 [functions.scrape-reviews]
 verify_jwt = false
+
+[functions.analyze-sentiment]
+verify_jwt = false
