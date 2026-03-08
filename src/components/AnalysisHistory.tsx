@@ -2,8 +2,10 @@ import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { History, Clock, Search, ChevronLeft, ChevronRight, Filter } from "lucide-react";
+import { History, Clock, Search, ChevronLeft, ChevronRight, Filter, Trash2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { deleteAnalysisSession } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 interface Props {
   history: any[];
