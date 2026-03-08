@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --background: 220 20% 97%;
+    --background: 220 20% 96%;
     --foreground: 224 71% 4%;
 
     --card: 0 0% 100%;
@@ -15,7 +15,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 224 71% 4%;
 
-    --primary: 262 83% 58%;
+    --primary: 230 65% 48%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 14% 96%;
@@ -32,17 +32,21 @@
 
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 262 83% 58%;
+    --ring: 230 65% 48%;
 
     --radius: 0.75rem;
 
-    --sentiment-positive: 152 69% 41%;
-    --sentiment-negative: 0 72% 51%;
-    --sentiment-neutral: 220 9% 46%;
+    --sentiment-positive: 145 63% 42%;
+    --sentiment-negative: 12 76% 52%;
+    --sentiment-neutral: 220 9% 58%;
 
-    --chart-positive: 152 69% 41%;
-    --chart-negative: 0 72% 51%;
-    --chart-neutral: 220 9% 58%;
+    --chart-positive: 145 63% 42%;
+    --chart-negative: 12 76% 52%;
+    --chart-neutral: 220 9% 64%;
+
+    --metric-green: 145 63% 42%;
+    --metric-blue: 230 65% 48%;
+    --metric-purple: 270 60% 52%;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -51,7 +55,7 @@
     --sidebar-accent: 240 4.8% 95.9%;
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 262 83% 58%;
+    --sidebar-ring: 230 65% 48%;
   }
 
   .dark {
@@ -64,7 +68,7 @@
     --popover: 224 50% 8%;
     --popover-foreground: 210 20% 98%;
 
-    --primary: 262 83% 65%;
+    --primary: 230 65% 58%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 215 28% 17%;
@@ -81,15 +85,19 @@
 
     --border: 215 28% 17%;
     --input: 215 28% 17%;
-    --ring: 262 83% 65%;
+    --ring: 230 65% 58%;
 
-    --sentiment-positive: 152 69% 45%;
-    --sentiment-negative: 0 72% 55%;
+    --sentiment-positive: 145 63% 48%;
+    --sentiment-negative: 12 76% 55%;
     --sentiment-neutral: 218 11% 65%;
 
-    --chart-positive: 152 69% 45%;
-    --chart-negative: 0 72% 55%;
+    --chart-positive: 145 63% 48%;
+    --chart-negative: 12 76% 55%;
     --chart-neutral: 218 11% 65%;
+
+    --metric-green: 145 63% 48%;
+    --metric-blue: 230 65% 58%;
+    --metric-purple: 270 60% 62%;
 
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
@@ -98,7 +106,7 @@
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 262 83% 58%;
+    --sidebar-ring: 230 65% 58%;
   }
 }
 
@@ -110,5 +118,20 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .word-cloud-sm {
+    font-size: 0.875rem;
+  }
+  .word-cloud-md {
+    font-size: 1.25rem;
+  }
+  .word-cloud-lg {
+    font-size: 1.75rem;
+  }
+  .word-cloud-xl {
+    font-size: 2.25rem;
   }
 }
