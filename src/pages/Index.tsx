@@ -10,6 +10,8 @@ import SampleReviews from "@/components/SampleReviews";
 import AnalysisHistory from "@/components/AnalysisHistory";
 import ModelEvaluation from "@/components/ModelEvaluation";
 import ExportButtons from "@/components/ExportButtons";
+import OverallRating from "@/components/OverallRating";
+import ReviewsByCategory from "@/components/ReviewsByCategory";
 import { analyzeSingleReview, analyzeCsvReviews, analyzeScrapedReviews, fetchAnalysisHistory } from "@/lib/api";
 import type { AnalysisResult } from "@/lib/types";
 import { Brain, AlertCircle } from "lucide-react";
@@ -133,29 +135,32 @@ const Index = () => {
               averageConfidence={result.averageConfidence}
             />
 
-            {/* Charts Row 1: Pie + Aspect Insights */}
+            {/* Charts Row 1: Pie + Overall Rating */}
             <div className="grid gap-6 lg:grid-cols-2">
               <SentimentDistributionChart distribution={result.distribution} />
-              {hasAspects ? (
+              <OverallRating
+                distribution={result.distribution}
+                averageConfidence={result.averageConfidence}
+                totalAnalyzed={result.totalAnalyzed}
+              />
+            </div>
+
+            {/* Charts Row 2: Aspect Charts + Insights */}
+            {hasAspects && (
+              <div className="grid gap-6 lg:grid-cols-2">
+                <AspectSentimentChart aspectSummary={result.aspectSummary} />
                 <AspectInsights aspectSummary={result.aspectSummary} />
-              ) : (
-                <TopKeywords wordFrequencies={result.wordFrequencies} />
-              )}
-            </div>
+              </div>
+            )}
 
-            {/* Charts Row 2: Bar Chart + Keywords */}
+            {/* Row 3: Keywords + Model Evaluation */}
             <div className="grid gap-6 lg:grid-cols-2">
-              {hasAspects && <AspectSentimentChart aspectSummary={result.aspectSummary} />}
-              {hasAspects ? (
-                <TopKeywords wordFrequencies={result.wordFrequencies} />
-              ) : null}
-            </div>
-
-            {/* Row 3: Sample Reviews + Model Evaluation */}
-            <div className="grid gap-6 lg:grid-cols-2">
-              <SampleReviews predictions={result.predictions} />
+              <TopKeywords wordFrequencies={result.wordFrequencies} />
               <ModelEvaluation predictions={result.predictions} distribution={result.distribution} />
             </div>
+
+            {/* Row 4: Reviews by Category (full width) */}
+            <ReviewsByCategory predictions={result.predictions} />
           </div>
         )}
 
