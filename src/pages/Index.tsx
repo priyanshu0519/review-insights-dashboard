@@ -146,9 +146,10 @@ const Index = () => {
               ) : null}
             </div>
 
-            {/* Row 3: Sample Reviews */}
+            {/* Row 3: Sample Reviews + Model Evaluation */}
             <div className="grid gap-6 lg:grid-cols-2">
               <SampleReviews predictions={result.predictions} />
+              <ModelEvaluation predictions={result.predictions} distribution={result.distribution} />
             </div>
           </div>
         )}
