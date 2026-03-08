@@ -14,7 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      analysis_sessions: {
+        Row: {
+          aspect_summary: Json
+          average_confidence: number | null
+          created_at: string
+          distribution: Json
+          id: string
+          predictions: Json
+          source_type: string
+          source_url: string | null
+          title: string | null
+          total_analyzed: number
+          word_frequencies: Json
+        }
+        Insert: {
+          aspect_summary?: Json
+          average_confidence?: number | null
+          created_at?: string
+          distribution?: Json
+          id?: string
+          predictions?: Json
+          source_type?: string
+          source_url?: string | null
+          title?: string | null
+          total_analyzed?: number
+          word_frequencies?: Json
+        }
+        Update: {
+          aspect_summary?: Json
+          average_confidence?: number | null
+          created_at?: string
+          distribution?: Json
+          id?: string
+          predictions?: Json
+          source_type?: string
+          source_url?: string | null
+          title?: string | null
+          total_analyzed?: number
+          word_frequencies?: Json
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
