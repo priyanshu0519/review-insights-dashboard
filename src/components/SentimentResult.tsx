@@ -44,9 +44,7 @@ const SentimentResult = ({ prediction }: SentimentResultProps) => {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div
-          className={`flex items-center gap-4 rounded-xl border p-5 ${config.bgClass} ${config.borderClass}`}
-        >
+        <div className={`flex items-center gap-4 rounded-xl border p-5 ${config.bgClass} ${config.borderClass}`}>
           <div className={`flex h-12 w-12 items-center justify-center rounded-full ${config.bgClass}`}>
             <Icon className={`h-6 w-6 ${config.textClass}`} />
           </div>
@@ -54,11 +52,12 @@ const SentimentResult = ({ prediction }: SentimentResultProps) => {
             <p className={`text-xl font-bold ${config.textClass}`}>{config.label}</p>
             <p className="text-sm text-muted-foreground">
               Confidence: <span className="font-mono font-semibold">{(prediction.confidence * 100).toFixed(1)}%</span>
+              <span className="ml-2 text-xs">Score: {prediction.score}</span>
             </p>
           </div>
         </div>
 
-        <p className="line-clamp-2 rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground italic">
+        <p className="line-clamp-3 rounded-lg bg-muted/50 px-3 py-2 text-sm text-muted-foreground italic">
           &ldquo;{prediction.text}&rdquo;
         </p>
 
