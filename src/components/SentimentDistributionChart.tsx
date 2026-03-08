@@ -1,16 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
 import type { SentimentDistribution } from "@/lib/types";
-import { PieChartIcon } from "lucide-react";
 
 interface Props {
   distribution: SentimentDistribution;
 }
 
 const COLORS_MAP: Record<string, string> = {
-  Positive: "hsl(152, 69%, 41%)",
-  Negative: "hsl(0, 72%, 51%)",
-  Neutral: "hsl(220, 9%, 58%)",
+  Positive: "hsl(145, 63%, 42%)",
+  Negative: "hsl(12, 76%, 52%)",
+  Neutral: "hsl(220, 9%, 64%)",
 };
 
 const SentimentDistributionChart = ({ distribution }: Props) => {
@@ -23,25 +22,21 @@ const SentimentDistributionChart = ({ distribution }: Props) => {
   const total = distribution.positive + distribution.negative + distribution.neutral;
 
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader className="pb-2">
-        <div className="flex items-center gap-2">
-          <PieChartIcon className="h-4 w-4 text-primary" />
-          <CardTitle className="text-sm font-semibold">Sentiment Distribution</CardTitle>
-        </div>
-        <p className="text-xs text-muted-foreground">{total} total reviews analyzed</p>
+        <CardTitle className="text-sm font-semibold">Sentiment Distribution</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[260px]">
+        <div className="h-[280px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={data}
                 cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={95}
-                paddingAngle={4}
+                cy="45%"
+                innerRadius={55}
+                outerRadius={90}
+                paddingAngle={3}
                 dataKey="value"
                 strokeWidth={2}
                 stroke="hsl(var(--card))"
@@ -61,6 +56,11 @@ const SentimentDistributionChart = ({ distribution }: Props) => {
               />
               <Legend
                 wrapperStyle={{ fontSize: "0.75rem" }}
+                formatter={(value) => {
+                  const item = data.find((d) => d.name === value);
+                  const pct = item ? ((item.value / total) * 100).toFixed(0) : 0;
+                  return `${value} ${pct}%`;
+                }}
               />
             </PieChart>
           </ResponsiveContainer>
