@@ -12,6 +12,7 @@ import ModelEvaluation from "@/components/ModelEvaluation";
 import ExportButtons from "@/components/ExportButtons";
 import OverallRating from "@/components/OverallRating";
 import ReviewsByCategory from "@/components/ReviewsByCategory";
+import Recommendation from "@/components/Recommendation";
 import { analyzeSingleReview, analyzeCsvReviews, analyzeScrapedReviews, fetchAnalysisHistory } from "@/lib/api";
 import type { AnalysisResult } from "@/lib/types";
 import { Brain, AlertCircle } from "lucide-react";
