@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Globe, Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 
 interface ScrapeUrlProps {
-  onAnalyze: (reviews: string[]) => void;
+  onAnalyze: (reviews: string[], url: string, title: string) => void;
   isLoading: boolean;
 }
 
@@ -33,8 +33,8 @@ const ScrapeUrl = ({ onAnalyze, isLoading }: ScrapeUrlProps) => {
         return;
       }
 
-      setStatus({ type: "success", message: `Found ${reviews.length} text blocks — running sentiment analysis...` });
-      onAnalyze(reviews);
+      setStatus({ type: "success", message: `Found ${reviews.length} reviews — running AI sentiment analysis...` });
+      onAnalyze(reviews, url.trim(), data.title || "");
     } catch (err: any) {
       setStatus({ type: "error", message: err.message });
     } finally {
@@ -64,7 +64,7 @@ const ScrapeUrl = ({ onAnalyze, isLoading }: ScrapeUrlProps) => {
         ) : (
           <Globe className="mr-2 h-4 w-4" />
         )}
-        {scraping ? "Scraping page..." : isLoading ? "Analyzing reviews..." : "Scrape & Analyze"}
+        {scraping ? "Scraping page..." : isLoading ? "Analyzing with AI..." : "Scrape & Analyze"}
       </Button>
       {status && (
         <div
@@ -72,7 +72,7 @@ const ScrapeUrl = ({ onAnalyze, isLoading }: ScrapeUrlProps) => {
             status.type === "error"
               ? "bg-destructive/10 text-destructive"
               : status.type === "success"
-              ? "bg-sentiment-positive/10 text-sentiment-positive"
+              ? "bg-green-500/10 text-green-700 dark:text-green-400"
               : "bg-accent text-accent-foreground"
           }`}
         >
