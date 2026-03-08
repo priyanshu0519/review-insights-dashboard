@@ -23,19 +23,19 @@ const SentimentDistributionChart = ({ distribution }: Props) => {
 
   return (
     <Card className="h-full">
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-2 px-3 sm:px-6">
         <CardTitle className="text-sm font-semibold">Sentiment Distribution</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="h-[280px]">
+      <CardContent className="px-2 sm:px-6">
+        <div className="h-[240px] sm:h-[280px]">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={data}
                 cx="50%"
                 cy="45%"
-                innerRadius={55}
-                outerRadius={90}
+                innerRadius={45}
+                outerRadius={75}
                 paddingAngle={3}
                 dataKey="value"
                 strokeWidth={2}
@@ -51,17 +51,10 @@ const SentimentDistributionChart = ({ distribution }: Props) => {
                   borderRadius: "0.5rem",
                   border: "1px solid hsl(var(--border))",
                   background: "hsl(var(--card))",
-                  fontSize: "0.75rem",
+                  fontSize: "0.7rem",
                 }}
               />
-              <Legend
-                wrapperStyle={{ fontSize: "0.75rem" }}
-                formatter={(value) => {
-                  const item = data.find((d) => d.name === value);
-                  const pct = item ? ((item.value / total) * 100).toFixed(0) : 0;
-                  return `${value} ${pct}%`;
-                }}
-              />
+              <Legend wrapperStyle={{ fontSize: "0.7rem" }} />
             </PieChart>
           </ResponsiveContainer>
         </div>

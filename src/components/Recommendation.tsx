@@ -15,7 +15,6 @@ const Recommendation = ({ distribution, averageConfidence, aspectSummary }: Prop
   const posRatio = distribution.positive / total;
   const negRatio = distribution.negative / total;
 
-  // Determine recommendation
   type Verdict = "recommended" | "not_recommended" | "mixed";
   let verdict: Verdict;
   let score: number;
@@ -34,7 +33,8 @@ const Recommendation = ({ distribution, averageConfidence, aspectSummary }: Prop
   const config = {
     recommended: {
       icon: ShieldCheck,
-      title: "Recommended to Buy",
+      title: "Recommended",
+      titleFull: "Recommended to Buy",
       subtitle: "This product has overwhelmingly positive feedback",
       color: "text-sentiment-positive",
       bg: "bg-sentiment-positive/10",
@@ -44,6 +44,7 @@ const Recommendation = ({ distribution, averageConfidence, aspectSummary }: Prop
     not_recommended: {
       icon: ShieldAlert,
       title: "Not Recommended",
+      titleFull: "Not Recommended",
       subtitle: "This product has significant negative feedback",
       color: "text-sentiment-negative",
       bg: "bg-sentiment-negative/10",
@@ -52,8 +53,9 @@ const Recommendation = ({ distribution, averageConfidence, aspectSummary }: Prop
     },
     mixed: {
       icon: ShieldQuestion,
-      title: "Consider Carefully",
-      subtitle: "This product has mixed reviews — weigh the pros and cons",
+      title: "Consider",
+      titleFull: "Consider Carefully",
+      subtitle: "Mixed reviews — weigh the pros and cons",
       color: "text-yellow-600 dark:text-yellow-400",
       bg: "bg-yellow-500/10",
       border: "border-yellow-500/30",
@@ -64,7 +66,6 @@ const Recommendation = ({ distribution, averageConfidence, aspectSummary }: Prop
   const c = config[verdict];
   const Icon = c.icon;
 
-  // Top pros & cons from aspects
   const pros = aspectSummary
     .filter((a) => a.positive > a.negative && a.total > 0)
     .sort((a, b) => b.positive - a.positive)
@@ -81,59 +82,59 @@ const Recommendation = ({ distribution, averageConfidence, aspectSummary }: Prop
 
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-3 px-3 sm:px-6">
         <CardTitle className="text-sm font-semibold">Purchase Recommendation</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-5">
+      <CardContent className="space-y-4 px-3 sm:px-6 sm:space-y-5">
         {/* Main verdict */}
-        <div className={`flex items-center gap-4 rounded-xl border p-5 ${c.bg} ${c.border}`}>
-          <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${c.bg}`}>
-            <Icon className={`h-8 w-8 ${c.color}`} />
+        <div className={`flex flex-col items-center gap-3 rounded-xl border p-4 sm:flex-row sm:gap-4 sm:p-5 ${c.bg} ${c.border}`}>
+          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${c.bg} sm:h-14 sm:w-14`}>
+            <Icon className={`h-6 w-6 sm:h-8 sm:w-8 ${c.color}`} />
           </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <p className={`text-xl font-bold ${c.color}`}>{c.title}</p>
-              <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${c.badge}`}>
+          <div className="text-center sm:text-left flex-1">
+            <div className="flex flex-col items-center gap-1.5 sm:flex-row sm:gap-2">
+              <p className={`text-lg font-bold sm:text-xl ${c.color}`}>
+                <span className="sm:hidden">{c.title}</span>
+                <span className="hidden sm:inline">{c.titleFull}</span>
+              </p>
+              <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold sm:text-xs sm:px-2.5 ${c.badge}`}>
                 {score}% {verdict === "not_recommended" ? "negative" : "positive"}
               </span>
             </div>
-            <p className="mt-1 text-sm text-muted-foreground">{c.subtitle}</p>
+            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">{c.subtitle}</p>
           </div>
         </div>
 
         {/* Pros & Cons */}
         {(pros.length > 0 || cons.length > 0) && (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {/* Pros */}
+          <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
             {pros.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-wider text-sentiment-positive">
+              <div className="space-y-1.5 sm:space-y-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-sentiment-positive sm:text-xs">
                   ✓ Strengths
                 </p>
                 {pros.map((a) => (
-                  <div key={a.aspect} className="flex items-center gap-2 rounded-lg bg-sentiment-positive/5 px-3 py-2">
-                    <CheckCircle2 className="h-4 w-4 shrink-0 text-sentiment-positive" />
-                    <span className="text-sm capitalize text-foreground">{a.aspect}</span>
-                    <span className="ml-auto text-xs font-mono text-sentiment-positive">
-                      {a.positive} positive
+                  <div key={a.aspect} className="flex items-center gap-2 rounded-lg bg-sentiment-positive/5 px-2.5 py-1.5 sm:px-3 sm:py-2">
+                    <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-sentiment-positive sm:h-4 sm:w-4" />
+                    <span className="text-xs capitalize text-foreground sm:text-sm">{a.aspect}</span>
+                    <span className="ml-auto text-[10px] font-mono text-sentiment-positive sm:text-xs">
+                      {a.positive}+
                     </span>
                   </div>
                 ))}
               </div>
             )}
-
-            {/* Cons */}
             {cons.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-wider text-sentiment-negative">
+              <div className="space-y-1.5 sm:space-y-2">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-sentiment-negative sm:text-xs">
                   ✗ Weaknesses
                 </p>
                 {cons.map((a) => (
-                  <div key={a.aspect} className="flex items-center gap-2 rounded-lg bg-sentiment-negative/5 px-3 py-2">
-                    <XCircle className="h-4 w-4 shrink-0 text-sentiment-negative" />
-                    <span className="text-sm capitalize text-foreground">{a.aspect}</span>
-                    <span className="ml-auto text-xs font-mono text-sentiment-negative">
-                      {a.negative} negative
+                  <div key={a.aspect} className="flex items-center gap-2 rounded-lg bg-sentiment-negative/5 px-2.5 py-1.5 sm:px-3 sm:py-2">
+                    <XCircle className="h-3.5 w-3.5 shrink-0 text-sentiment-negative sm:h-4 sm:w-4" />
+                    <span className="text-xs capitalize text-foreground sm:text-sm">{a.aspect}</span>
+                    <span className="ml-auto text-[10px] font-mono text-sentiment-negative sm:text-xs">
+                      {a.negative}−
                     </span>
                   </div>
                 ))}
@@ -142,26 +143,22 @@ const Recommendation = ({ distribution, averageConfidence, aspectSummary }: Prop
           </div>
         )}
 
-        {/* Cautions */}
         {cautions.length > 0 && (
-          <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <div className="space-y-1.5 sm:space-y-2">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-xs">
               ⚠ Needs More Data
             </p>
             {cautions.map((a) => (
-              <div key={a.aspect} className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2">
-                <AlertTriangle className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <span className="text-sm capitalize text-foreground">{a.aspect}</span>
-                <span className="ml-auto text-xs text-muted-foreground">
-                  {a.neutral} neutral
-                </span>
+              <div key={a.aspect} className="flex items-center gap-2 rounded-lg bg-muted px-2.5 py-1.5 sm:px-3 sm:py-2">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-muted-foreground sm:h-4 sm:w-4" />
+                <span className="text-xs capitalize text-foreground sm:text-sm">{a.aspect}</span>
+                <span className="ml-auto text-[10px] text-muted-foreground sm:text-xs">{a.neutral} neutral</span>
               </div>
             ))}
           </div>
         )}
 
-        {/* Confidence note */}
-        <p className="text-xs text-muted-foreground text-center pt-2">
+        <p className="text-[10px] text-muted-foreground text-center pt-1 sm:text-xs sm:pt-2">
           Based on {total} review{total !== 1 ? "s" : ""} · AI confidence: {(averageConfidence * 100).toFixed(0)}%
         </p>
       </CardContent>

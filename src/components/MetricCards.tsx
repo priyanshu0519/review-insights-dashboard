@@ -19,31 +19,28 @@ const MetricCards = ({ distribution, totalAnalyzed, averageConfidence }: Props) 
   const SentimentIcon = dominant === "Positive" ? Smile : dominant === "Negative" ? Frown : Meh;
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-      {/* Overall Sentiment */}
-      <div className="flex items-center gap-4 rounded-xl bg-sentiment-positive px-5 py-4 text-white shadow-md">
-        <SentimentIcon className="h-10 w-10 shrink-0 opacity-90" />
-        <div>
-          <p className="text-sm font-medium opacity-90">Overall Sentiment:</p>
-          <p className="text-xl font-bold">{dominant}</p>
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+      <div className="flex items-center gap-3 rounded-xl bg-sentiment-positive px-4 py-3 text-white shadow-md sm:gap-4 sm:px-5 sm:py-4">
+        <SentimentIcon className="h-8 w-8 shrink-0 opacity-90 sm:h-10 sm:w-10" />
+        <div className="min-w-0">
+          <p className="text-xs font-medium opacity-90 sm:text-sm">Overall Sentiment:</p>
+          <p className="text-lg font-bold sm:text-xl">{dominant}</p>
         </div>
       </div>
 
-      {/* Total Reviews */}
-      <div className="flex items-center gap-4 rounded-xl bg-metric-blue px-5 py-4 text-white shadow-md">
-        <FileText className="h-10 w-10 shrink-0 opacity-90" />
-        <div>
-          <p className="text-sm font-medium opacity-90">Total Reviews Analyzed:</p>
-          <p className="text-xl font-bold font-mono">{totalAnalyzed.toLocaleString()}</p>
+      <div className="flex items-center gap-3 rounded-xl bg-metric-blue px-4 py-3 text-white shadow-md sm:gap-4 sm:px-5 sm:py-4">
+        <FileText className="h-8 w-8 shrink-0 opacity-90 sm:h-10 sm:w-10" />
+        <div className="min-w-0">
+          <p className="text-xs font-medium opacity-90 sm:text-sm">Total Reviews:</p>
+          <p className="text-lg font-bold font-mono sm:text-xl">{totalAnalyzed.toLocaleString()}</p>
         </div>
       </div>
 
-      {/* Model Accuracy / Confidence */}
-      <div className="flex items-center gap-4 rounded-xl bg-metric-purple px-5 py-4 text-white shadow-md">
-        <CheckCircle className="h-10 w-10 shrink-0 opacity-90" />
-        <div>
-          <p className="text-sm font-medium opacity-90">Model Accuracy:</p>
-          <p className="text-xl font-bold font-mono">{(averageConfidence * 100).toFixed(0)}%</p>
+      <div className="flex items-center gap-3 rounded-xl bg-metric-purple px-4 py-3 text-white shadow-md sm:gap-4 sm:px-5 sm:py-4">
+        <CheckCircle className="h-8 w-8 shrink-0 opacity-90 sm:h-10 sm:w-10" />
+        <div className="min-w-0">
+          <p className="text-xs font-medium opacity-90 sm:text-sm">Model Accuracy:</p>
+          <p className="text-lg font-bold font-mono sm:text-xl">{(averageConfidence * 100).toFixed(0)}%</p>
         </div>
       </div>
     </div>
