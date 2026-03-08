@@ -7,47 +7,112 @@ import type {
   AspectSentiment,
 } from "./types";
 
-const ASPECTS = ["battery", "camera", "price", "delivery", "quality", "design", "performance", "display"];
+// Comprehensive aspect keywords grouped by category
+const ASPECT_KEYWORDS: Record<string, string[]> = {
+  quality: ["quality", "durable", "durability", "sturdy", "flimsy", "solid", "build", "material", "construction", "well-made", "cheap", "premium"],
+  price: ["price", "cost", "expensive", "affordable", "cheap", "value", "worth", "money", "budget", "overpriced", "bargain", "deal"],
+  delivery: ["delivery", "shipping", "arrived", "package", "packaging", "ship", "dispatch", "transit", "courier", "tracking"],
+  design: ["design", "look", "looks", "style", "aesthetic", "appearance", "color", "colour", "sleek", "beautiful", "ugly", "compact", "size", "shape"],
+  usability: ["easy", "use", "user-friendly", "intuitive", "comfortable", "convenient", "ergonomic", "handle", "grip", "lightweight", "heavy", "portable"],
+  performance: ["performance", "fast", "slow", "speed", "powerful", "efficient", "works", "function", "effective", "reliable", "consistent"],
+  battery: ["battery", "charge", "charging", "power", "mah", "rechargeable"],
+  camera: ["camera", "photo", "photos", "picture", "pictures", "lens", "zoom", "megapixel", "video"],
+  display: ["display", "screen", "resolution", "bright", "brightness", "hd", "lcd", "oled", "amoled"],
+  sound: ["sound", "audio", "speaker", "volume", "bass", "noise", "loud", "quiet", "music"],
+  durability: ["durable", "lasting", "break", "broke", "broken", "rust", "scratch", "wear", "tear", "lifespan"],
+  service: ["service", "support", "customer", "warranty", "return", "refund", "replacement", "response", "help"],
+  taste: ["taste", "flavor", "delicious", "bland", "fresh", "stale", "smell", "aroma"],
+  comfort: ["comfort", "comfortable", "soft", "cushion", "fit", "fits", "snug", "tight", "loose"],
+  cleaning: ["clean", "cleaning", "wash", "dishwasher", "stain", "maintenance", "care"],
+};
 
-const POSITIVE_WORDS = ["great", "excellent", "amazing", "love", "perfect", "best", "fantastic", "wonderful", "good", "happy"];
-const NEGATIVE_WORDS = ["bad", "terrible", "worst", "hate", "broken", "poor", "awful", "horrible", "disappointing", "waste"];
+const POSITIVE_WORDS = [
+  "great", "excellent", "amazing", "love", "perfect", "best", "fantastic", "wonderful", 
+  "good", "happy", "awesome", "superb", "outstanding", "brilliant", "impressive",
+  "recommend", "satisfied", "pleased", "nice", "beautiful", "premium", "solid",
+  "sturdy", "reliable", "fast", "smooth", "comfortable", "easy", "convenient",
+  "durable", "delicious", "fresh", "effective", "efficient", "worth",
+];
 
-function randomChoice<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)];
-}
+const NEGATIVE_WORDS = [
+  "bad", "terrible", "worst", "hate", "broken", "poor", "awful", "horrible",
+  "disappointing", "waste", "cheap", "flimsy", "useless", "defective", "damaged",
+  "slow", "uncomfortable", "difficult", "overpriced", "fragile", "leaked",
+  "stale", "bland", "unreliable", "faulty", "rusted", "scratched", "ugly",
+  "heavy", "loud", "noisy", "regret", "return", "refund",
+];
+
+const STOPWORDS = new Set([
+  "the", "and", "for", "are", "but", "not", "you", "all", "can", "had", "her",
+  "was", "one", "our", "out", "has", "have", "been", "this", "that", "with",
+  "they", "from", "will", "would", "there", "their", "what", "about", "which",
+  "when", "make", "like", "just", "over", "such", "take", "than", "them",
+  "very", "some", "could", "into", "other", "then", "its", "also", "after",
+  "these", "two", "more", "only", "come", "made", "find", "here", "thing",
+  "many", "well", "does", "get", "got", "use", "used", "using", "did",
+  "each", "way", "may", "said", "much", "lot", "really", "still", "even",
+  "own", "too", "any", "same", "how", "most", "let", "been", "being",
+  "were", "who", "she", "his", "him", "new", "now", "old", "see", "time",
+]);
 
 function detectSentiment(text: string): { sentiment: SentimentLabel; confidence: number } {
   const lower = text.toLowerCase();
-  const posCount = POSITIVE_WORDS.filter((w) => lower.includes(w)).length;
-  const negCount = NEGATIVE_WORDS.filter((w) => lower.includes(w)).length;
+  const words = lower.split(/\W+/);
+  
+  let posScore = 0;
+  let negScore = 0;
+  
+  for (const w of words) {
+    if (POSITIVE_WORDS.includes(w)) posScore++;
+    if (NEGATIVE_WORDS.includes(w)) negScore++;
+  }
 
-  if (posCount > negCount) return { sentiment: "positive", confidence: 0.7 + Math.random() * 0.25 };
-  if (negCount > posCount) return { sentiment: "negative", confidence: 0.7 + Math.random() * 0.25 };
-  return { sentiment: "neutral", confidence: 0.5 + Math.random() * 0.3 };
+  if (posScore > negScore) {
+    const confidence = Math.min(0.95, 0.65 + (posScore - negScore) * 0.05 + Math.random() * 0.1);
+    return { sentiment: "positive", confidence };
+  }
+  if (negScore > posScore) {
+    const confidence = Math.min(0.95, 0.65 + (negScore - posScore) * 0.05 + Math.random() * 0.1);
+    return { sentiment: "negative", confidence };
+  }
+  return { sentiment: "neutral", confidence: 0.45 + Math.random() * 0.2 };
 }
 
 function extractAspects(text: string): AspectSentiment[] {
   const lower = text.toLowerCase();
   const found: AspectSentiment[] = [];
-  for (const aspect of ASPECTS) {
-    if (lower.includes(aspect)) {
-      found.push({
-        aspect,
-        sentiment: randomChoice<SentimentLabel>(["positive", "negative", "neutral"]),
-        confidence: 0.6 + Math.random() * 0.35,
-      });
+
+  for (const [aspect, keywords] of Object.entries(ASPECT_KEYWORDS)) {
+    const matched = keywords.some((kw) => lower.includes(kw));
+    if (!matched) continue;
+
+    // Determine sentiment around this aspect by checking nearby words
+    const sentimentContext = keywords.reduce((ctx, kw) => {
+      const idx = lower.indexOf(kw);
+      if (idx === -1) return ctx;
+      // Get surrounding 60 chars
+      const start = Math.max(0, idx - 30);
+      const end = Math.min(lower.length, idx + kw.length + 30);
+      return ctx + " " + lower.slice(start, end);
+    }, "");
+
+    const posHits = POSITIVE_WORDS.filter((w) => sentimentContext.includes(w)).length;
+    const negHits = NEGATIVE_WORDS.filter((w) => sentimentContext.includes(w)).length;
+
+    let sentiment: SentimentLabel = "neutral";
+    let confidence = 0.5 + Math.random() * 0.15;
+    if (posHits > negHits) {
+      sentiment = "positive";
+      confidence = 0.7 + Math.random() * 0.2;
+    } else if (negHits > posHits) {
+      sentiment = "negative";
+      confidence = 0.7 + Math.random() * 0.2;
     }
+
+    found.push({ aspect, sentiment, confidence });
   }
-  if (found.length === 0) {
-    const picked = ASPECTS.slice(0, 2 + Math.floor(Math.random() * 3));
-    for (const aspect of picked) {
-      found.push({
-        aspect,
-        sentiment: randomChoice<SentimentLabel>(["positive", "negative", "neutral"]),
-        confidence: 0.6 + Math.random() * 0.35,
-      });
-    }
-  }
+
+  // NO random fallback — only return aspects actually found in the text
   return found;
 }
 
@@ -56,7 +121,7 @@ function getWordFrequencies(text: string): WordFrequency[] {
     .toLowerCase()
     .replace(/[^\w\s]/g, "")
     .split(/\s+/)
-    .filter((w) => w.length > 2);
+    .filter((w) => w.length > 2 && !STOPWORDS.has(w) && !/^\d+$/.test(w));
   const freq: Record<string, number> = {};
   for (const w of words) freq[w] = (freq[w] || 0) + 1;
   return Object.entries(freq)

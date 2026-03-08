@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ModelMetricsData } from "@/lib/types";
+import { Grid3X3 } from "lucide-react";
 
 interface Props {
   metrics: ModelMetricsData;
@@ -11,16 +12,22 @@ const ConfusionMatrix = ({ metrics }: Props) => {
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-base">Confusion Matrix</CardTitle>
+        <div className="flex items-center gap-2">
+          <Grid3X3 className="h-4 w-4 text-primary" />
+          <CardTitle className="text-sm font-semibold">Confusion Matrix</CardTitle>
+        </div>
+        <p className="text-xs text-muted-foreground">Model prediction accuracy breakdown</p>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr>
-                <th className="p-2 text-left text-muted-foreground">Actual \ Predicted</th>
+                <th className="p-2.5 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Actual ↓ / Predicted →
+                </th>
                 {metrics.labels.map((l) => (
-                  <th key={l} className="p-2 text-center font-medium text-muted-foreground">
+                  <th key={l} className="p-2.5 text-center text-xs font-semibold text-muted-foreground">
                     {l}
                   </th>
                 ))}
@@ -29,19 +36,19 @@ const ConfusionMatrix = ({ metrics }: Props) => {
             <tbody>
               {metrics.confusionMatrix.map((row, i) => (
                 <tr key={i}>
-                  <td className="p-2 font-medium text-muted-foreground">{metrics.labels[i]}</td>
+                  <td className="p-2.5 text-xs font-semibold text-muted-foreground">{metrics.labels[i]}</td>
                   {row.map((val, j) => {
                     const intensity = val / max;
                     const isDiagonal = i === j;
                     return (
                       <td
                         key={j}
-                        className="p-2 text-center font-mono font-semibold rounded"
+                        className="p-2.5 text-center font-mono text-sm font-bold"
                         style={{
                           backgroundColor: isDiagonal
-                            ? `hsla(142, 71%, 45%, ${intensity * 0.4})`
-                            : `hsla(0, 84%, 60%, ${intensity * 0.25})`,
-                          color: "hsl(var(--foreground))",
+                            ? `hsla(var(--chart-positive) / ${intensity * 0.35})`
+                            : `hsla(var(--chart-negative) / ${intensity * 0.2})`,
+                          borderRadius: "0.375rem",
                         }}
                       >
                         {val}
