@@ -1,32 +1,23 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-import type { SentimentPrediction } from "@/lib/types";
+import type { AspectSummary } from "@/lib/types";
 import { Layers } from "lucide-react";
 
 interface Props {
-  predictions: SentimentPrediction[];
+  aspectSummary: AspectSummary[];
 }
 
-const AspectSentimentChart = ({ predictions }: Props) => {
-  const aspectMap: Record<string, { positive: number; negative: number; neutral: number }> = {};
-
-  for (const p of predictions) {
-    for (const a of p.aspects) {
-      if (!aspectMap[a.aspect]) aspectMap[a.aspect] = { positive: 0, negative: 0, neutral: 0 };
-      aspectMap[a.aspect][a.sentiment]++;
-    }
-  }
-
-  const data = Object.entries(aspectMap)
-    .map(([aspect, counts]) => ({
-      aspect: aspect.charAt(0).toUpperCase() + aspect.slice(1),
-      positive: counts.positive,
-      negative: counts.negative,
-      neutral: counts.neutral,
-      total: counts.positive + counts.negative + counts.neutral,
-    }))
+const AspectSentimentChart = ({ aspectSummary }: Props) => {
+  const data = aspectSummary
+    .filter((a) => a.total > 0)
     .sort((a, b) => b.total - a.total)
-    .slice(0, 10);
+    .slice(0, 10)
+    .map((a) => ({
+      aspect: a.aspect.charAt(0).toUpperCase() + a.aspect.slice(1),
+      positive: a.positive,
+      negative: a.negative,
+      neutral: a.neutral,
+    }));
 
   if (data.length === 0) return null;
 
@@ -38,7 +29,7 @@ const AspectSentimentChart = ({ predictions }: Props) => {
           <CardTitle className="text-sm font-semibold">Aspect-Based Sentiment</CardTitle>
         </div>
         <p className="text-xs text-muted-foreground">
-          {data.length} product aspect{data.length !== 1 ? "s" : ""} detected
+          {data.length} product aspect{data.length !== 1 ? "s" : ""} detected in reviews
         </p>
       </CardHeader>
       <CardContent>
@@ -57,7 +48,7 @@ const AspectSentimentChart = ({ predictions }: Props) => {
                 }}
               />
               <Legend wrapperStyle={{ fontSize: "0.75rem" }} />
-              <Bar dataKey="positive" fill="hsl(152, 69%, 41%)" stackId="a" name="Positive" radius={[0, 0, 0, 0]} />
+              <Bar dataKey="positive" fill="hsl(152, 69%, 41%)" stackId="a" name="Positive" />
               <Bar dataKey="negative" fill="hsl(0, 72%, 51%)" stackId="a" name="Negative" />
               <Bar dataKey="neutral" fill="hsl(220, 9%, 58%)" stackId="a" name="Neutral" radius={[0, 4, 4, 0]} />
             </BarChart>

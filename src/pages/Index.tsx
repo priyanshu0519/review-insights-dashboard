@@ -9,21 +9,28 @@ import SentimentResult from "@/components/SentimentResult";
 import SentimentDistributionChart from "@/components/SentimentDistributionChart";
 import AspectSentimentChart from "@/components/AspectSentimentChart";
 import WordFrequencyChart from "@/components/WordFrequencyChart";
-import ModelMetrics from "@/components/ModelMetrics";
-import ConfusionMatrix from "@/components/ConfusionMatrix";
-import { analyzeSingleReview, analyzeCsvReviews } from "@/lib/api";
+import AnalysisMetrics from "@/components/AnalysisMetrics";
+import { analyzeSingleReview, analyzeCsvReviews, scrapeAndAnalyze } from "@/lib/api";
 import type { AnalysisResult } from "@/lib/types";
-import { MessageSquareText, FileUp, Globe, TrendingUp } from "lucide-react";
+import { MessageSquareText, FileUp, Globe, TrendingUp, AlertCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const handleSingleReview = async (text: string) => {
     setIsLoading(true);
+    setError(null);
     try {
       const res = await analyzeSingleReview(text);
       setResult(res);
+      toast({ title: "Analysis Complete", description: "Review sentiment analyzed successfully." });
+    } catch (err: any) {
+      setError(err.message);
+      toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -31,19 +38,35 @@ const Index = () => {
 
   const handleCsvReviews = async (reviews: string[]) => {
     setIsLoading(true);
+    setError(null);
     try {
       const res = await analyzeCsvReviews(reviews);
       setResult(res);
+      toast({ title: "Analysis Complete", description: `${res.totalAnalyzed} reviews analyzed.` });
+    } catch (err: any) {
+      setError(err.message);
+      toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const totalReviews = result
-    ? result.distribution.positive + result.distribution.negative + result.distribution.neutral
-    : 0;
+  const handleScrape = async (reviews: string[]) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await analyzeCsvReviews(reviews);
+      setResult(res);
+      toast({ title: "Analysis Complete", description: `${res.totalAnalyzed} scraped reviews analyzed.` });
+    } catch (err: any) {
+      setError(err.message);
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const hasAspects = result?.predictions.some((p) => p.aspects.length > 0);
+  const hasAspects = result && result.aspectSummary.length > 0;
 
   return (
     <DashboardLayout>
@@ -73,26 +96,38 @@ const Index = () => {
                 <CsvUpload onAnalyze={handleCsvReviews} isLoading={isLoading} />
               </TabsContent>
               <TabsContent value="scrape" className="mt-0 max-w-2xl">
-                <ScrapeUrl onAnalyze={handleCsvReviews} isLoading={isLoading} />
+                <ScrapeUrl onAnalyze={handleScrape} isLoading={isLoading} />
               </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
 
+        {/* Error */}
+        {error && (
+          <div className="flex items-center gap-3 rounded-xl bg-destructive/10 p-4 text-destructive">
+            <AlertCircle className="h-5 w-5 shrink-0" />
+            <p className="text-sm">{error}</p>
+          </div>
+        )}
+
         {/* Results */}
         {result && (
           <div className="space-y-6 animate-fade-in">
-            {/* Summary banner */}
+            {/* Summary */}
             <div className="flex items-center gap-3 rounded-xl bg-accent/60 p-4">
               <TrendingUp className="h-5 w-5 text-accent-foreground" />
               <p className="text-sm font-medium text-accent-foreground">
-                Analyzed <span className="font-bold">{totalReviews}</span> review{totalReviews !== 1 ? "s" : ""} 
-                {hasAspects && " with aspect-level insights"}
+                Analyzed <span className="font-bold">{result.totalAnalyzed}</span> review{result.totalAnalyzed !== 1 ? "s" : ""}
+                {" · "}Avg confidence: <span className="font-mono font-bold">{(result.averageConfidence * 100).toFixed(1)}%</span>
+                {hasAspects && ` · ${result.aspectSummary.length} aspects detected`}
               </p>
             </div>
 
-            {/* Model Metrics */}
-            <ModelMetrics metrics={result.modelMetrics} />
+            {/* Metrics */}
+            <AnalysisMetrics
+              totalAnalyzed={result.totalAnalyzed}
+              averageConfidence={result.averageConfidence}
+            />
 
             {/* Primary Charts */}
             <div className="grid gap-6 lg:grid-cols-2">
@@ -102,16 +137,13 @@ const Index = () => {
               <SentimentDistributionChart distribution={result.distribution} />
             </div>
 
-            {/* Detailed Charts — only show aspect chart if there are aspects */}
-            <div className="grid gap-6 lg:grid-cols-2">
+            {/* Detailed Charts */}
+            <div className={`grid gap-6 ${hasAspects ? "lg:grid-cols-2" : ""}`}>
               {hasAspects && (
-                <AspectSentimentChart predictions={result.predictions} />
+                <AspectSentimentChart aspectSummary={result.aspectSummary} />
               )}
               <WordFrequencyChart wordFrequencies={result.wordFrequencies} />
             </div>
-
-            {/* Confusion Matrix */}
-            <ConfusionMatrix metrics={result.modelMetrics} />
           </div>
         )}
       </div>
