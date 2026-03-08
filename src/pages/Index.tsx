@@ -160,7 +160,11 @@ const Index = () => {
         )}
 
         {/* History */}
-        <AnalysisHistory history={history} onLoad={loadFromHistory} />
+        <AnalysisHistory
+          history={history}
+          onLoad={loadFromHistory}
+          onDelete={(id) => setHistory((prev) => prev.filter((s) => s.id !== id))}
+        />
       </div>
     </DashboardLayout>
   );
