@@ -9,6 +9,7 @@ import TopKeywords from "@/components/TopKeywords";
 import SampleReviews from "@/components/SampleReviews";
 import AnalysisHistory from "@/components/AnalysisHistory";
 import ModelEvaluation from "@/components/ModelEvaluation";
+import ExportButtons from "@/components/ExportButtons";
 import { analyzeSingleReview, analyzeCsvReviews, analyzeScrapedReviews, fetchAnalysisHistory } from "@/lib/api";
 import type { AnalysisResult } from "@/lib/types";
 import { Brain, AlertCircle } from "lucide-react";
