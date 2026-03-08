@@ -9,6 +9,7 @@ import TopKeywords from "@/components/TopKeywords";
 import SampleReviews from "@/components/SampleReviews";
 import AnalysisHistory from "@/components/AnalysisHistory";
 import ModelEvaluation from "@/components/ModelEvaluation";
+import ExportButtons from "@/components/ExportButtons";
 import { analyzeSingleReview, analyzeCsvReviews, analyzeScrapedReviews, fetchAnalysisHistory } from "@/lib/api";
 import type { AnalysisResult } from "@/lib/types";
 import { Brain, AlertCircle } from "lucide-react";
@@ -121,6 +122,10 @@ const Index = () => {
         {/* Results */}
         {result && !isLoading && (
           <div className="space-y-6 animate-fade-in">
+            {/* Export */}
+            <div className="flex justify-end">
+              <ExportButtons result={result} />
+            </div>
             {/* Metric Cards */}
             <MetricCards
               distribution={result.distribution}
