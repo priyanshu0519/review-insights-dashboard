@@ -122,6 +122,10 @@ const Index = () => {
         {/* Results */}
         {result && !isLoading && (
           <div className="space-y-6 animate-fade-in">
+            {/* Export */}
+            <div className="flex justify-end">
+              <ExportButtons result={result} />
+            </div>
             {/* Metric Cards */}
             <MetricCards
               distribution={result.distribution}
