@@ -26,6 +26,7 @@ export type Database = {
           source_url: string | null
           title: string | null
           total_analyzed: number
+          user_id: string | null
           word_frequencies: Json
         }
         Insert: {
@@ -39,6 +40,7 @@ export type Database = {
           source_url?: string | null
           title?: string | null
           total_analyzed?: number
+          user_id?: string | null
           word_frequencies?: Json
         }
         Update: {
@@ -52,6 +54,7 @@ export type Database = {
           source_url?: string | null
           title?: string | null
           total_analyzed?: number
+          user_id?: string | null
           word_frequencies?: Json
         }
         Relationships: []
