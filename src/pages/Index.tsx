@@ -6,7 +6,6 @@ import SentimentDistributionChart from "@/components/SentimentDistributionChart"
 import AspectSentimentChart from "@/components/AspectSentimentChart";
 import AspectInsights from "@/components/AspectInsights";
 import TopKeywords from "@/components/TopKeywords";
-import SampleReviews from "@/components/SampleReviews";
 import AnalysisHistory from "@/components/AnalysisHistory";
 import ModelEvaluation from "@/components/ModelEvaluation";
 import ExportButtons from "@/components/ExportButtons";
@@ -97,7 +96,7 @@ const Index = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         {/* Input */}
         <InputSection
           onSingleReview={handleSingleReview}
@@ -108,27 +107,28 @@ const Index = () => {
 
         {/* Loading */}
         {isLoading && (
-          <div className="flex items-center justify-center gap-3 rounded-xl bg-primary/10 p-5 animate-pulse-glow">
-            <Brain className="h-6 w-6 text-primary" />
-            <p className="text-sm font-semibold text-primary">AI is analyzing your reviews…</p>
+          <div className="flex items-center justify-center gap-2 rounded-xl bg-primary/10 p-4 animate-pulse-glow sm:gap-3 sm:p-5">
+            <Brain className="h-5 w-5 text-primary sm:h-6 sm:w-6" />
+            <p className="text-xs font-semibold text-primary sm:text-sm">AI is analyzing your reviews…</p>
           </div>
         )}
 
         {/* Error */}
         {error && (
-          <div className="flex items-center gap-3 rounded-xl bg-destructive/10 p-4 text-destructive">
-            <AlertCircle className="h-5 w-5 shrink-0" />
-            <p className="text-sm">{error}</p>
+          <div className="flex items-start gap-2 rounded-xl bg-destructive/10 p-3 text-destructive sm:items-center sm:gap-3 sm:p-4">
+            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 sm:mt-0 sm:h-5 sm:w-5" />
+            <p className="text-xs sm:text-sm">{error}</p>
           </div>
         )}
 
         {/* Results */}
         {result && !isLoading && (
-          <div className="space-y-6 animate-fade-in">
+          <div className="space-y-4 animate-fade-in sm:space-y-6">
             {/* Export */}
             <div className="flex justify-end">
               <ExportButtons result={result} />
             </div>
+
             {/* Metric Cards */}
             <MetricCards
               distribution={result.distribution}
@@ -136,8 +136,8 @@ const Index = () => {
               averageConfidence={result.averageConfidence}
             />
 
-            {/* Charts Row 1: Pie + Overall Rating */}
-            <div className="grid gap-6 lg:grid-cols-2">
+            {/* Row 1: Pie + Overall Rating */}
+            <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
               <SentimentDistributionChart distribution={result.distribution} />
               <OverallRating
                 distribution={result.distribution}
@@ -146,16 +146,16 @@ const Index = () => {
               />
             </div>
 
-            {/* Charts Row 2: Aspect Charts + Insights */}
+            {/* Row 2: Aspect Charts + Insights */}
             {hasAspects && (
-              <div className="grid gap-6 lg:grid-cols-2">
+              <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
                 <AspectSentimentChart aspectSummary={result.aspectSummary} />
                 <AspectInsights aspectSummary={result.aspectSummary} />
               </div>
             )}
 
             {/* Row 3: Keywords + Model Evaluation */}
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
               <TopKeywords wordFrequencies={result.wordFrequencies} />
               <ModelEvaluation predictions={result.predictions} distribution={result.distribution} />
             </div>

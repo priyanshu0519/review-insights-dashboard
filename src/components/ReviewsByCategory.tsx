@@ -9,11 +9,11 @@ interface Props {
   predictions: SentimentPrediction[];
 }
 
-const TABS: { label: string; value: SentimentLabel | "all"; icon: typeof ThumbsUp }[] = [
-  { label: "All", value: "all", icon: Minus },
-  { label: "Positive", value: "positive", icon: ThumbsUp },
-  { label: "Negative", value: "negative", icon: ThumbsDown },
-  { label: "Neutral", value: "neutral", icon: Minus },
+const TABS: { label: string; shortLabel: string; value: SentimentLabel | "all"; icon: typeof ThumbsUp }[] = [
+  { label: "All", shortLabel: "All", value: "all", icon: Minus },
+  { label: "Positive", shortLabel: "Pos", value: "positive", icon: ThumbsUp },
+  { label: "Negative", shortLabel: "Neg", value: "negative", icon: ThumbsDown },
+  { label: "Neutral", shortLabel: "Neu", value: "neutral", icon: Minus },
 ];
 
 const PER_PAGE = 4;
@@ -51,9 +51,9 @@ const ReviewsByCategory = ({ predictions }: Props) => {
 
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-3 px-3 sm:px-6">
         <CardTitle className="text-sm font-semibold">Reviews by Sentiment</CardTitle>
-        <div className="flex flex-wrap items-center gap-1.5 pt-2">
+        <div className="flex flex-wrap items-center gap-1 pt-2 sm:gap-1.5">
           {TABS.map((t) => {
             const Icon = t.icon;
             const active = tab === t.value;
@@ -62,18 +62,19 @@ const ReviewsByCategory = ({ predictions }: Props) => {
                 key={t.value}
                 variant={active ? "default" : "outline"}
                 size="sm"
-                className="h-7 gap-1.5 px-3 text-xs"
+                className="h-6 gap-1 px-2 text-[10px] sm:h-7 sm:gap-1.5 sm:px-3 sm:text-xs"
                 onClick={() => { setTab(t.value); setPage(0); }}
               >
-                <Icon className="h-3 w-3" />
-                {t.label}
-                <span className="ml-0.5 opacity-70">({counts[t.value]})</span>
+                <Icon className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                <span className="sm:hidden">{t.shortLabel}</span>
+                <span className="hidden sm:inline">{t.label}</span>
+                <span className="opacity-70">({counts[t.value]})</span>
               </Button>
             );
           })}
         </div>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-2 px-3 sm:px-6 sm:space-y-3">
         {visible.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">No reviews in this category.</p>
         ) : (
@@ -82,15 +83,15 @@ const ReviewsByCategory = ({ predictions }: Props) => {
             return (
               <div
                 key={i}
-                className="rounded-lg border border-border/50 p-3 space-y-2"
+                className="rounded-lg border border-border/50 p-2.5 space-y-1.5 sm:p-3 sm:space-y-2"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
                     <div className="flex items-center gap-0.5">
                       {[1, 2, 3, 4, 5].map((s) => (
                         <Star
                           key={s}
-                          className={`h-3 w-3 ${
+                          className={`h-2.5 w-2.5 sm:h-3 sm:w-3 ${
                             s <= stars ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30"
                           }`}
                         />
@@ -98,23 +99,23 @@ const ReviewsByCategory = ({ predictions }: Props) => {
                     </div>
                     <Badge
                       variant="outline"
-                      className={`text-[10px] capitalize px-1.5 py-0 ${sentimentStyle(p.sentiment)}`}
+                      className={`text-[9px] capitalize px-1 py-0 sm:text-[10px] sm:px-1.5 ${sentimentStyle(p.sentiment)}`}
                     >
                       {p.sentiment}
                     </Badge>
                   </div>
-                  <span className="text-[10px] font-mono text-muted-foreground">
-                    {(p.confidence * 100).toFixed(0)}% conf
+                  <span className="text-[9px] font-mono text-muted-foreground sm:text-[10px]">
+                    {(p.confidence * 100).toFixed(0)}%
                   </span>
                 </div>
-                <p className="text-sm text-foreground leading-relaxed">{p.text}</p>
+                <p className="text-xs text-foreground leading-relaxed sm:text-sm">{p.text}</p>
                 {p.aspects.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {p.aspects.map((a) => (
                       <Badge
                         key={a.aspect}
                         variant="outline"
-                        className={`text-[10px] capitalize ${sentimentStyle(a.sentiment)}`}
+                        className={`text-[9px] capitalize sm:text-[10px] ${sentimentStyle(a.sentiment)}`}
                       >
                         {a.aspect}
                       </Badge>
@@ -127,27 +128,13 @@ const ReviewsByCategory = ({ predictions }: Props) => {
         )}
 
         {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-3 pt-2 text-sm text-muted-foreground">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              disabled={currentPage === 0}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              <ChevronLeft className="h-4 w-4" />
+          <div className="flex items-center justify-center gap-2 pt-2 text-xs text-muted-foreground sm:gap-3 sm:text-sm">
+            <Button variant="ghost" size="icon" className="h-6 w-6 sm:h-7 sm:w-7" disabled={currentPage === 0} onClick={() => setPage((p) => p - 1)}>
+              <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>
-            <span className="text-xs font-medium">
-              {currentPage + 1} of {totalPages}
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7"
-              disabled={currentPage >= totalPages - 1}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              <ChevronRight className="h-4 w-4" />
+            <span className="text-[10px] font-medium sm:text-xs">{currentPage + 1} of {totalPages}</span>
+            <Button variant="ghost" size="icon" className="h-6 w-6 sm:h-7 sm:w-7" disabled={currentPage >= totalPages - 1} onClick={() => setPage((p) => p + 1)}>
+              <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </Button>
           </div>
         )}
