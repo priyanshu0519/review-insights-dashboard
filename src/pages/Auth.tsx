@@ -4,30 +4,49 @@ import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { BarChart3, Mail, Lock, Loader2 } from "lucide-react";
+import { BarChart3, Mail, Lock, Loader2, Eye, EyeOff, AlertCircle, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+const PASSWORD_RULES = [
+  { label: "At least 6 characters", test: (p: string) => p.length >= 6 },
+  { label: "Contains a number", test: (p: string) => /\d/.test(p) },
+  { label: "Contains uppercase letter", test: (p: string) => /[A-Z]/.test(p) },
+];
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     try {
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       } else {
+        if (!PASSWORD_RULES.every((r) => r.test(password))) {
+          setError("Please meet all password requirements.");
+          setLoading(false);
+          return;
+        }
         const { error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
         toast({ title: "Account created!", description: "You are now signed in." });
       }
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      const msg = err.message || "Something went wrong";
+      if (msg.includes("Invalid login credentials")) {
+        setError("Invalid email or password. Please check your credentials and try again.");
+      } else {
+        setError(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -42,6 +61,8 @@ const Auth = () => {
     }
   };
 
+  const showPasswordHints = !isLogin && password.length > 0;
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md">
@@ -55,6 +76,14 @@ const Auth = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Error message */}
+          {error && (
+            <div className="flex items-start gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
           {/* Google */}
           <Button variant="outline" className="w-full gap-2" onClick={handleGoogleAuth}>
             <svg className="h-4 w-4" viewBox="0 0 24 24">
@@ -83,7 +112,7 @@ const Auth = () => {
                 type="email"
                 placeholder="Email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => { setEmail(e.target.value); setError(null); }}
                 className="pl-10"
                 required
               />
@@ -91,15 +120,44 @@ const Auth = () => {
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="pl-10"
+                onChange={(e) => { setPassword(e.target.value); setError(null); }}
+                className="pl-10 pr-10"
                 required
                 minLength={6}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
             </div>
+
+            {/* Password strength hints (signup only) */}
+            {showPasswordHints && (
+              <div className="space-y-1 rounded-lg bg-muted/50 p-3">
+                {PASSWORD_RULES.map((rule) => {
+                  const passed = rule.test(password);
+                  return (
+                    <div key={rule.label} className="flex items-center gap-2 text-xs">
+                      {passed ? (
+                        <Check className="h-3.5 w-3.5 text-[hsl(var(--sentiment-positive))]" />
+                      ) : (
+                        <AlertCircle className="h-3.5 w-3.5 text-muted-foreground" />
+                      )}
+                      <span className={passed ? "text-[hsl(var(--sentiment-positive))]" : "text-muted-foreground"}>
+                        {rule.label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {isLogin ? "Sign In" : "Sign Up"}
@@ -110,7 +168,7 @@ const Auth = () => {
             {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
             <button
               type="button"
-              onClick={() => setIsLogin(!isLogin)}
+              onClick={() => { setIsLogin(!isLogin); setError(null); }}
               className="font-medium text-primary hover:underline"
             >
               {isLogin ? "Sign up" : "Sign in"}
