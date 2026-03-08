@@ -43,7 +43,8 @@ const Auth = () => {
     } catch (err: any) {
       const msg = err.message || "Something went wrong";
       if (msg.includes("Invalid login credentials")) {
-        setError("Invalid email or password. Please check your credentials and try again.");
+        setError("No account found with this email. Please sign up first to create an account.");
+        setIsLogin(false);
       } else {
         setError(msg);
       }
