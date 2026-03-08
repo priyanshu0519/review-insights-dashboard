@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 interface Props {
   history: any[];
   onLoad: (session: any) => void;
+  onDelete?: (id: string) => void;
 }
 
 const PER_PAGE = 5;
