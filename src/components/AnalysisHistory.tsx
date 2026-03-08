@@ -16,10 +16,21 @@ interface Props {
 const PER_PAGE = 5;
 const SOURCE_FILTERS = ["all", "single", "csv", "scrape"] as const;
 
-const AnalysisHistory = ({ history, onLoad }: Props) => {
+const AnalysisHistory = ({ history, onLoad, onDelete }: Props) => {
   const [search, setSearch] = useState("");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [page, setPage] = useState(0);
+  const { toast } = useToast();
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteAnalysisSession(id);
+      onDelete?.(id);
+      toast({ title: "Deleted", description: "Session removed from history." });
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+  };
 
   const filtered = useMemo(() => {
     let items = history;
@@ -88,12 +99,14 @@ const AnalysisHistory = ({ history, onLoad }: Props) => {
         ) : (
           <div className="space-y-2">
             {visible.map((session) => (
-              <button
+              <div
                 key={session.id}
-                onClick={() => onLoad(session)}
-                className="flex w-full items-center justify-between rounded-lg border border-border/50 px-4 py-3 text-left transition-colors hover:bg-muted"
+                className="flex w-full items-center justify-between rounded-lg border border-border/50 px-4 py-3 transition-colors hover:bg-muted"
               >
-                <div className="min-w-0 flex-1">
+                <button
+                  onClick={() => onLoad(session)}
+                  className="min-w-0 flex-1 text-left"
+                >
                   <p className="truncate text-sm font-medium">{session.title || "Untitled"}</p>
                   <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
                     <span className="capitalize">{session.source_type}</span>
@@ -105,16 +118,29 @@ const AnalysisHistory = ({ history, onLoad }: Props) => {
                       {formatDistanceToNow(new Date(session.created_at), { addSuffix: true })}
                     </span>
                   </div>
+                </button>
+                <div className="ml-4 flex items-center gap-2">
+                  <div className="flex gap-2 text-xs">
+                    <span className="rounded-full bg-sentiment-positive/10 px-2 py-0.5 text-sentiment-positive font-medium">
+                      {(session.distribution as any)?.positive || 0}+
+                    </span>
+                    <span className="rounded-full bg-sentiment-negative/10 px-2 py-0.5 text-sentiment-negative font-medium">
+                      {(session.distribution as any)?.negative || 0}−
+                    </span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDelete(session.id);
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
-                <div className="ml-4 flex gap-2 text-xs">
-                  <span className="rounded-full bg-sentiment-positive/10 px-2 py-0.5 text-sentiment-positive font-medium">
-                    {(session.distribution as any)?.positive || 0}+
-                  </span>
-                  <span className="rounded-full bg-sentiment-negative/10 px-2 py-0.5 text-sentiment-negative font-medium">
-                    {(session.distribution as any)?.negative || 0}−
-                  </span>
-                </div>
-              </button>
+              </div>
             ))}
           </div>
         )}
