@@ -12,6 +12,7 @@ import ModelEvaluation from "@/components/ModelEvaluation";
 import ExportButtons from "@/components/ExportButtons";
 import OverallRating from "@/components/OverallRating";
 import ReviewsByCategory from "@/components/ReviewsByCategory";
+import Recommendation from "@/components/Recommendation";
 import { analyzeSingleReview, analyzeCsvReviews, analyzeScrapedReviews, fetchAnalysisHistory } from "@/lib/api";
 import type { AnalysisResult } from "@/lib/types";
 import { Brain, AlertCircle } from "lucide-react";
@@ -159,7 +160,14 @@ const Index = () => {
               <ModelEvaluation predictions={result.predictions} distribution={result.distribution} />
             </div>
 
-            {/* Row 4: Reviews by Category (full width) */}
+            {/* Row 4: Recommendation */}
+            <Recommendation
+              distribution={result.distribution}
+              averageConfidence={result.averageConfidence}
+              aspectSummary={result.aspectSummary}
+            />
+
+            {/* Row 5: Reviews by Category */}
             <ReviewsByCategory predictions={result.predictions} />
           </div>
         )}
