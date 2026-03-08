@@ -19,7 +19,10 @@ async function saveSession(
   title?: string
 ) {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
     await supabase.from("analysis_sessions").insert([{
+      user_id: user.id,
       source_type: sourceType,
       source_url: sourceUrl || null,
       title: title || null,
