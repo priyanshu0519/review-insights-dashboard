@@ -31,15 +31,14 @@ Deno.serve(async (req) => {
 
     console.log('Analyzing ' + reviews.length + ' reviews with AI...');
 
-    // Process in batches of 10 to stay within token limits
-    const batchSize = 10;
-    const allPredictions: any[] = [];
-
+    // Process in parallel batches of 20 for speed
+    const batchSize = 20;
+    const batches: string[][] = [];
     for (let i = 0; i < reviews.length; i += batchSize) {
-      const batch = reviews.slice(i, i + batchSize);
-      const numberedReviews = batch.map((r, idx) => `Review ${i + idx + 1}: "${r}"`).join('\n\n');
+      batches.push(reviews.slice(i, i + batchSize));
+    }
 
-      const systemPrompt = `You are an expert NLP sentiment analysis engine. For each review, analyze:
+    const systemPrompt = `You are an expert NLP sentiment analysis engine. For each review, analyze:
 1. Overall sentiment (positive/negative/neutral) with confidence score (0-1)
 2. Sentiment score (-5 to +5 scale)
 3. Product aspects mentioned with per-aspect sentiment
@@ -47,6 +46,53 @@ Deno.serve(async (req) => {
 ONLY return aspects that are explicitly discussed in the review text. Common aspects include: quality, price, delivery, design, usability, performance, durability, service, comfort, cleaning, taste, safety, cooking, capacity, battery, camera, display, sound. Do NOT invent aspects not mentioned.
 
 Be precise with confidence scores - use higher values (0.85+) only when sentiment is very clear.`;
+
+    const toolDef = {
+      type: 'function' as const,
+      function: {
+        name: 'submit_analysis',
+        description: 'Submit sentiment analysis results for all reviews in the batch',
+        parameters: {
+          type: 'object',
+          properties: {
+            results: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  sentiment: { type: 'string', enum: ['positive', 'negative', 'neutral'] },
+                  confidence: { type: 'number', minimum: 0, maximum: 1 },
+                  score: { type: 'number', minimum: -5, maximum: 5 },
+                  aspects: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        aspect: { type: 'string' },
+                        sentiment: { type: 'string', enum: ['positive', 'negative', 'neutral'] },
+                        confidence: { type: 'number', minimum: 0, maximum: 1 },
+                        mentions: { type: 'number', minimum: 1 },
+                      },
+                      required: ['aspect', 'sentiment', 'confidence', 'mentions'],
+                      additionalProperties: false,
+                    },
+                  },
+                },
+                required: ['sentiment', 'confidence', 'score', 'aspects'],
+                additionalProperties: false,
+              },
+            },
+          },
+          required: ['results'],
+          additionalProperties: false,
+        },
+      },
+    };
+
+    // Fire all batches in parallel
+    const batchPromises = batches.map(async (batch, batchIdx) => {
+      const offset = batchIdx * batchSize;
+      const numberedReviews = batch.map((r, idx) => `Review ${offset + idx + 1}: "${r}"`).join('\n\n');
 
       const response = await fetch(AI_GATEWAY_URL, {
         method: 'POST',
@@ -60,66 +106,16 @@ Be precise with confidence scores - use higher values (0.85+) only when sentimen
             { role: 'system', content: systemPrompt },
             { role: 'user', content: numberedReviews },
           ],
-          tools: [{
-            type: 'function',
-            function: {
-              name: 'submit_analysis',
-              description: 'Submit sentiment analysis results for all reviews in the batch',
-              parameters: {
-                type: 'object',
-                properties: {
-                  results: {
-                    type: 'array',
-                    items: {
-                      type: 'object',
-                      properties: {
-                        sentiment: { type: 'string', enum: ['positive', 'negative', 'neutral'] },
-                        confidence: { type: 'number', minimum: 0, maximum: 1 },
-                        score: { type: 'number', minimum: -5, maximum: 5 },
-                        aspects: {
-                          type: 'array',
-                          items: {
-                            type: 'object',
-                            properties: {
-                              aspect: { type: 'string' },
-                              sentiment: { type: 'string', enum: ['positive', 'negative', 'neutral'] },
-                              confidence: { type: 'number', minimum: 0, maximum: 1 },
-                              mentions: { type: 'number', minimum: 1 },
-                            },
-                            required: ['aspect', 'sentiment', 'confidence', 'mentions'],
-                            additionalProperties: false,
-                          },
-                        },
-                      },
-                      required: ['sentiment', 'confidence', 'score', 'aspects'],
-                      additionalProperties: false,
-                    },
-                  },
-                },
-                required: ['results'],
-                additionalProperties: false,
-              },
-            },
-          }],
+          tools: [toolDef],
           tool_choice: { type: 'function', function: { name: 'submit_analysis' } },
         }),
       });
 
       if (!response.ok) {
         const status = response.status;
-        if (status === 429) {
-          return new Response(
-            JSON.stringify({ success: false, error: 'Rate limit exceeded. Please try again in a moment.' }),
-            { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
-        if (status === 402) {
-          return new Response(
-            JSON.stringify({ success: false, error: 'AI credits exhausted. Please add credits to continue.' }),
-            { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-          );
-        }
         const errText = await response.text();
+        if (status === 429) throw new Error('RATE_LIMIT');
+        if (status === 402) throw new Error('CREDITS_EXHAUSTED');
         console.error('AI gateway error:', status, errText);
         throw new Error('AI analysis failed with status ' + status);
       }
@@ -135,17 +131,38 @@ Be precise with confidence scores - use higher values (0.85+) only when sentimen
       const parsed = JSON.parse(toolCall.function.arguments);
       const results = parsed.results || [];
 
-      for (let j = 0; j < batch.length; j++) {
+      return batch.map((text, j) => {
         const analysis = results[j] || { sentiment: 'neutral', confidence: 0.5, score: 0, aspects: [] };
-        allPredictions.push({
-          text: batch[j],
+        return {
+          text,
           sentiment: analysis.sentiment,
           confidence: Math.round(analysis.confidence * 1000) / 1000,
           score: Math.round(analysis.score * 100) / 100,
           aspects: analysis.aspects || [],
-        });
+        };
+      });
+    });
+
+    let batchResults: any[][];
+    try {
+      batchResults = await Promise.all(batchPromises);
+    } catch (err: any) {
+      if (err.message === 'RATE_LIMIT') {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Rate limit exceeded. Please try again in a moment.' }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
+      if (err.message === 'CREDITS_EXHAUSTED') {
+        return new Response(
+          JSON.stringify({ success: false, error: 'AI credits exhausted. Please add credits to continue.' }),
+          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      throw err;
     }
+
+    const allPredictions = batchResults.flat();
 
     // Aggregate distribution
     const distribution = { positive: 0, negative: 0, neutral: 0 };
