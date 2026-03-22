@@ -22,7 +22,7 @@ function isJunkContent(text: string): boolean {
     /my (profile|orders|account)|gift cards|rewards|wishlist/i,
     /select (delivery|your|the department)|delivering to|update location/i,
     /add to (cart|wish|bag)|buy now|add to wishlist/i,
-    /account & lists|returns.*orders/i,
+    /account & lists/i,
     /fulfilled by|sold by|cash on.*delivery/i,
     /return(s|able|ing)|refund|replacement|warranty|eligible for/i,
     /contact us|about us|careers|press|corporate|registered office/i,
@@ -53,6 +53,13 @@ function isJunkContent(text: string): boolean {
     /after viewing product detail/i,
     /navigate back to pages/i,
     /^(brand|operating system|memory|screen size|resolution)\s/i,
+    /technician visit|technician's evaluation/i,
+    /self-return option/i,
+    /for products worth more than/i,
+    /damaged,? defective or (incorrect|different)/i,
+    /^\d+ days?\s*(return|replace|refund)/i,
+    /used (mobiles|laptops|books)/i,
+    /INR \d+/i,
   ];
   for (const p of junk) if (p.test(text)) return true;
   return false;
