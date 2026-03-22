@@ -14,13 +14,10 @@ function cleanText(text: string): string {
 }
 
 function isValidReview(text: string): boolean {
-  // Relaxed: minimum 15 chars, max 5000
   if (text.length < 15 || text.length > 5000) return false;
-
   const words = text.split(/\s+/).filter(w => w.length > 1);
   if (words.length < 3) return false;
 
-  // Skip navigation/UI junk only
   const skipPatterns = [
     /^(home|menu|sign in|log in|cart|wishlist|footer|header|nav)/i,
     /add to (cart|wish|bag)/i,
@@ -30,39 +27,77 @@ function isValidReview(text: string): boolean {
     /captcha|recaptcha/i,
     /checkout|shipping cost|order total/i,
     /\${.*}/,
-    /^(showing|page|next|previous|sort by|filter)/i,
+    /^(showing|page|next|previous|sort by|filter)\b/i,
     /^\d+\s*(of|\/)\s*\d+$/i,
+    /^(share|report|helpful|verified purchase|read more)$/i,
   ];
 
   for (const pattern of skipPatterns) {
     if (pattern.test(text)) return false;
   }
-
   return true;
 }
 
-// Try to get the reviews-specific URL for Amazon/Flipkart
-function getReviewsUrl(url: string): string[] {
-  const urls = [url];
+function extractReviews(markdown: string): string[] {
+  const reviews: string[] = [];
+  const seen = new Set<string>();
 
-  // Amazon: redirect to all reviews page
-  const amazonMatch = url.match(/amazon\.\w+.*?\/(dp|product)\/([A-Z0-9]{10})/i);
-  if (amazonMatch) {
-    const asin = amazonMatch[2];
-    const domain = url.match(/amazon\.(\w+(\.\w+)?)/)?.[0] || 'amazon.com';
-    urls.unshift(`https://www.${domain}/product-reviews/${asin}/ref=cm_cr_dp_d_show_all_btm?ie=UTF8&reviewerType=all_reviews&sortBy=recent&pageNumber=1`);
+  const addReview = (text: string) => {
+    const cleaned = cleanText(text);
+    const key = cleaned.slice(0, 60).toLowerCase();
+    if (isValidReview(cleaned) && !seen.has(key)) {
+      seen.add(key);
+      reviews.push(cleaned);
+    }
+  };
+
+  // Strategy 1: Paragraph blocks
+  for (const block of markdown.split(/\n{2,}/)) addReview(block);
+
+  // Strategy 2: List items
+  for (const item of markdown.split(/\n[-•*]\s/)) addReview(item);
+
+  // Strategy 3: Combined consecutive lines
+  let buffer = '';
+  for (const line of markdown.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      if (buffer) { addReview(buffer); buffer = ''; }
+      continue;
+    }
+    buffer += ' ' + trimmed;
   }
+  if (buffer) addReview(buffer);
 
-  // Flipkart: redirect to reviews page
-  const flipkartMatch = url.match(/flipkart\.com.*?\/p\/(itm[a-z0-9]+)/i);
-  if (flipkartMatch) {
-    urls.unshift(`${url.split('?')[0]}/product-reviews/${flipkartMatch[1]}?page=1&sortOrder=MOST_RECENT`);
-  }
-
-  return urls;
+  return reviews;
 }
 
-async function scrapeUrl(apiKey: string, targetUrl: string): Promise<{ markdown: string; title: string }> {
+// Build paginated review URLs for known e-commerce sites
+function getReviewPageUrls(url: string, maxPages: number): string[] {
+  // Amazon
+  const amazonMatch = url.match(/amazon\.(\w+(?:\.\w+)?)\/.+?(?:\/dp\/|\/product\/)([A-Z0-9]{10})/i);
+  if (amazonMatch) {
+    const domain = amazonMatch[1];
+    const asin = amazonMatch[2];
+    return Array.from({ length: maxPages }, (_, i) =>
+      `https://www.amazon.${domain}/product-reviews/${asin}?reviewerType=all_reviews&sortBy=recent&pageNumber=${i + 1}`
+    );
+  }
+
+  // Flipkart
+  const flipkartMatch = url.match(/(flipkart\.com\/.+?\/p\/[a-z0-9]+)/i);
+  if (flipkartMatch) {
+    const base = flipkartMatch[1];
+    return Array.from({ length: maxPages }, (_, i) =>
+      `https://www.${base}/product-reviews/pid?page=${i + 1}&sortOrder=MOST_RECENT`
+    );
+  }
+
+  // Generic: just the original URL
+  return [url];
+}
+
+async function scrapePage(apiKey: string, targetUrl: string): Promise<{ markdown: string; title: string }> {
   const response = await fetch('https://api.firecrawl.dev/v1/scrape', {
     method: 'POST',
     headers: {
@@ -72,80 +107,20 @@ async function scrapeUrl(apiKey: string, targetUrl: string): Promise<{ markdown:
     body: JSON.stringify({
       url: targetUrl,
       formats: ['markdown'],
-      onlyMainContent: false, // Get full page to capture all reviews
-      waitFor: 5000, // Wait longer for dynamic content to load
+      onlyMainContent: false,
+      waitFor: 5000,
     }),
   });
 
   const data = await response.json();
-
   if (!response.ok) {
-    throw new Error(data.error || `Request failed with status ${response.status}`);
+    throw new Error(data.error || `Status ${response.status}`);
   }
 
   return {
     markdown: data.data?.markdown || data.markdown || '',
     title: data.data?.metadata?.title || data.metadata?.title || '',
   };
-}
-
-function extractReviews(markdown: string): string[] {
-  const reviews: string[] = [];
-
-  // Strategy 1: Split by double newlines (paragraph blocks)
-  const blocks = markdown.split(/\n{2,}/);
-  for (const block of blocks) {
-    const cleaned = cleanText(block);
-    if (isValidReview(cleaned)) {
-      reviews.push(cleaned);
-    }
-  }
-
-  // Strategy 2: Split by list markers
-  const listItems = markdown.split(/\n[-•*]\s/);
-  for (const item of listItems) {
-    const cleaned = cleanText(item);
-    if (isValidReview(cleaned) && !reviews.includes(cleaned)) {
-      reviews.push(cleaned);
-    }
-  }
-
-  // Strategy 3: Split by single newlines and combine short consecutive lines
-  const lines = markdown.split('\n');
-  let buffer = '';
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed) {
-      if (buffer) {
-        const cleaned = cleanText(buffer);
-        if (isValidReview(cleaned) && !reviews.includes(cleaned)) {
-          reviews.push(cleaned);
-        }
-        buffer = '';
-      }
-      continue;
-    }
-    buffer += ' ' + trimmed;
-  }
-  if (buffer) {
-    const cleaned = cleanText(buffer);
-    if (isValidReview(cleaned) && !reviews.includes(cleaned)) {
-      reviews.push(cleaned);
-    }
-  }
-
-  // Strategy 4: Look for review-like patterns (star ratings followed by text)
-  const reviewPatterns = markdown.match(/(?:★{1,5}|⭐{1,5}|\d(?:\.\d)?\s*(?:out of|\/)\s*5|(?:\d\s*)?stars?)\s*[:\-–—]?\s*(.{20,}?)(?=\n(?:★|⭐|\d(?:\.\d)?\s*(?:out of|\/)|$))/gi);
-  if (reviewPatterns) {
-    for (const match of reviewPatterns) {
-      const cleaned = cleanText(match);
-      if (isValidReview(cleaned) && !reviews.includes(cleaned)) {
-        reviews.push(cleaned);
-      }
-    }
-  }
-
-  return reviews;
 }
 
 Deno.serve(async (req) => {
@@ -178,42 +153,57 @@ Deno.serve(async (req) => {
 
     console.log('Scraping product reviews from:', formattedUrl);
 
-    const urlsToTry = getReviewsUrl(formattedUrl);
+    // Get up to 5 pages of reviews for known sites
+    const pageUrls = getReviewPageUrls(formattedUrl, 5);
     let allReviews: string[] = [];
     let pageTitle = '';
+    const seen = new Set<string>();
 
-    // Try each URL (reviews page first, then product page)
-    for (const targetUrl of urlsToTry) {
+    // Scrape pages sequentially (to avoid rate limits), stop when no new reviews found
+    for (let i = 0; i < pageUrls.length; i++) {
       try {
-        console.log('Trying URL:', targetUrl);
-        const { markdown, title } = await scrapeUrl(apiKey, targetUrl);
+        console.log(`Scraping page ${i + 1}/${pageUrls.length}: ${pageUrls[i]}`);
+        const { markdown, title } = await scrapePage(apiKey, pageUrls[i]);
         if (!pageTitle && title) pageTitle = title;
 
         const reviews = extractReviews(markdown);
-        console.log(`Found ${reviews.length} reviews from ${targetUrl}`);
-
+        let newCount = 0;
         for (const r of reviews) {
-          if (!allReviews.includes(r)) {
+          const key = r.slice(0, 60).toLowerCase();
+          if (!seen.has(key)) {
+            seen.add(key);
             allReviews.push(r);
+            newCount++;
           }
         }
 
-        // If we got a good number from the reviews page, stop
-        if (allReviews.length >= 15) break;
+        console.log(`Page ${i + 1}: found ${reviews.length} reviews, ${newCount} new`);
+
+        // If no new reviews on this page, stop paginating
+        if (newCount === 0 && i > 0) {
+          console.log('No new reviews found, stopping pagination');
+          break;
+        }
       } catch (err) {
-        console.warn(`Failed to scrape ${targetUrl}:`, err);
+        console.warn(`Failed page ${i + 1}:`, err);
+        // If first page fails, try original URL as fallback
+        if (i === 0 && pageUrls[0] !== formattedUrl) {
+          try {
+            const { markdown, title } = await scrapePage(apiKey, formattedUrl);
+            if (!pageTitle && title) pageTitle = title;
+            const reviews = extractReviews(markdown);
+            for (const r of reviews) {
+              const key = r.slice(0, 60).toLowerCase();
+              if (!seen.has(key)) { seen.add(key); allReviews.push(r); }
+            }
+          } catch (_) { /* skip */ }
+        }
+        break;
       }
     }
 
-    // Deduplicate by similarity (remove near-duplicates)
-    const uniqueReviews = allReviews
-      .filter((review, i, arr) => {
-        const short = review.slice(0, 50).toLowerCase();
-        return !arr.slice(0, i).some(prev => prev.slice(0, 50).toLowerCase() === short);
-      })
-      .slice(0, 150);
-
-    console.log(`Extracted ${uniqueReviews.length} total unique reviews`);
+    const uniqueReviews = allReviews.slice(0, 200);
+    console.log(`Total extracted: ${uniqueReviews.length} unique reviews`);
 
     return new Response(
       JSON.stringify({
