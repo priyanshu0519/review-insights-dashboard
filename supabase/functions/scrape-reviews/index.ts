@@ -66,14 +66,18 @@ function isJunkContent(text: string): boolean {
 }
 
 function isProductDescription(text: string): boolean {
-  // Product feature descriptions (manufacturer copy)
   const descPatterns = [
-    /^[A-Z][A-Z\s]+—/,  // "DYNAMIC ISLAND COMES TO IPHONE 15 —"
+    /^[A-Z][A-Z\s]{5,}—/,  // "DYNAMIC ISLAND COMES TO IPHONE 15 —"
     /^(classic|stylish|easy care|regular fit|clean look|featuring a|designed with|made from|with a regular)/i,
     /these (women's|men's|jeans|pants|shirts)/i,
     /comfortably at the natural waistline/i,
     /machine wash/i,
     /high-quality (denim|fabric|material)/i,
+    /computational photography|dynamic island|ceramic shield/i,
+    /super retina|telephoto|bionic chip/i,
+    /optical.quality|voice isolation/i,
+    /\d+MP\s+(main\s+)?camera/i,
+    /splash,? water,? and dust resistant/i,
   ];
   for (const p of descPatterns) if (p.test(text)) return true;
   return false;
