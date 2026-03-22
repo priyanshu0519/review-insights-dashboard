@@ -9,33 +9,86 @@ function cleanText(text: string): string {
     .replace(/!\[.*?\]\(.*?\)/g, '')
     .replace(/!https?[^\s]*/g, '')
     .replace(/[#*_\[\]()>|]/g, '')
+    .replace(/\\\\/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
-function isValidReview(text: string): boolean {
-  if (text.length < 15 || text.length > 5000) return false;
+function isActualReview(text: string): boolean {
+  if (text.length < 20 || text.length > 5000) return false;
   const words = text.split(/\s+/).filter(w => w.length > 1);
-  if (words.length < 3) return false;
+  if (words.length < 4) return false;
 
   const skipPatterns = [
-    /^(home|menu|sign in|log in|cart|wishlist|footer|header|nav)/i,
+    /^(home|menu|sign in|log in|cart|wishlist|footer|header|nav|hello)/i,
     /add to (cart|wish|bag)/i,
-    /cookie|privacy policy|terms of (use|service)|copyright ©/i,
-    /^(sorry|error|unavailable|loading|please wait)/i,
+    /cookie|privacy policy|terms of (use|service)|copyright/i,
     /\.(jpg|png|gif|svg|webp|css|js)\b/i,
     /captcha|recaptcha/i,
     /checkout|shipping cost|order total/i,
-    /\${.*}/,
     /^(showing|page|next|previous|sort by|filter)\b/i,
     /^\d+\s*(of|\/)\s*\d+$/i,
-    /^(share|report|helpful|verified purchase|read more)$/i,
+    /^(share|report|helpful|verified purchase|read more|show all)$/i,
+    // Navigation / UI elements
+    /sign up|create.*account|new customer|become a seller/i,
+    /notification|preferences|customer care|advertise|download app/i,
+    /my profile|my orders|gift cards|rewards/i,
+    // Product listings / ads
+    /\d+%\s*OFF|₹\s*\d+.*₹\s*\d+|hot deal|bestseller/i,
+    /!Image\s/i,
+    /AD\\?\s/i,
+    // E-commerce boilerplate
+    /select (delivery|your) location/i,
+    /delivering to|update location/i,
+    /fulfilled by|sold by/i,
+    /cash on.*delivery/i,
+    /add to cart|buy now|add to wishlist/i,
+    /return(s|able)|refund|replacement|warranty/i,
+    /eligible for (free )?replacement/i,
+    /contact us|about us|careers|press|corporate/i,
+    /payments|shipping|cancellation/i,
+    /flipkart internet|registered office/i,
+    /telephone:|tel:/i,
+    /explore more|similar items|compare with/i,
+    /ratings and reviews|based on \d+.*ratings/i,
+    /features customers loved/i,
+    /questions and answers/i,
+    /be the first to ask/i,
+    /no questions.*available/i,
+    // Category / department lists
+    /select the department/i,
+    /all categories/i,
+    /account & lists|returns.*orders/i,
+    // Amazon specific boilerplate
+    /wish list|wish from any/i,
+    /your (account|orders|recommendations|prime)/i,
+    /to move between items/i,
+    /main content.*about this item/i,
+    /click to see full view/i,
+    /visit the.*store/i,
+    /tap on the category/i,
+    /360.*view|videos.*reviews/i,
+    // Generic product titles (not reviews)
+    /^\w+\s+(women|men|kids|boys|girls)\s+(regular|slim|skinny|straight|flared)/i,
+    /^(KOTTY|NOVIO|KASHIAN|MERCEL|RIFA|zayla|cnw|GUTI|DENIM|PINKLIT|Dollfashion|Zaristaa|3BUTTERFLIES|FLYING MACHINE|silver threads|LEMON FRESH|LTA)\b/i,
+    // Price ranges
+    /^Rs\.\s*\d+/i,
+    /^₹\s*\d+/i,
+    // Short non-review phrases
+    /^(features|description|and more|classic|stylish|easy care|regular fit|clean look)$/i,
+    /^cargo\s*style/i,
   ];
 
   for (const pattern of skipPatterns) {
     if (pattern.test(text)) return false;
   }
-  return true;
+
+  // Check it has some opinion/sentiment words or looks like natural language
+  const hasOpinionIndicators = /good|great|nice|bad|worst|best|love|hate|awesome|terrible|excellent|amazing|poor|decent|okay|fine|happy|disappointed|recommend|perfect|waste|worth|quality|comfortable|beautiful|ugly|fast|slow|broke|works|stopped|issue|problem|satisfied|unsatisfied|better|worse|fantastic|horrible|outstanding|mediocre|superb|awful|delighted|annoyed|pleased|frustr/i.test(text);
+  const hasReviewPattern = /bought|purchased|using|ordered|received|delivered|arrived|tried|tested|experience|product|item|service/i.test(text);
+  const isLongEnough = words.length >= 8;
+
+  return hasOpinionIndicators || hasReviewPattern || isLongEnough;
 }
 
 function extractReviews(markdown: string): string[] {
@@ -44,20 +97,20 @@ function extractReviews(markdown: string): string[] {
 
   const addReview = (text: string) => {
     const cleaned = cleanText(text);
-    const key = cleaned.slice(0, 60).toLowerCase();
-    if (isValidReview(cleaned) && !seen.has(key)) {
+    const key = cleaned.slice(0, 80).toLowerCase();
+    if (isActualReview(cleaned) && !seen.has(key)) {
       seen.add(key);
       reviews.push(cleaned);
     }
   };
 
-  // Strategy 1: Paragraph blocks
+  // Split by paragraph blocks
   for (const block of markdown.split(/\n{2,}/)) addReview(block);
 
-  // Strategy 2: List items
+  // Split by list items
   for (const item of markdown.split(/\n[-•*]\s/)) addReview(item);
 
-  // Strategy 3: Combined consecutive lines
+  // Combine consecutive lines
   let buffer = '';
   for (const line of markdown.split('\n')) {
     const trimmed = line.trim();
@@ -72,10 +125,9 @@ function extractReviews(markdown: string): string[] {
   return reviews;
 }
 
-// Build paginated review URLs for known e-commerce sites
 function getReviewPageUrls(url: string, maxPages: number): string[] {
-  // Amazon
-  const amazonMatch = url.match(/amazon\.(\w+(?:\.\w+)?)\/.+?(?:\/dp\/|\/product\/)([A-Z0-9]{10})/i);
+  // Amazon - handle various URL formats
+  const amazonMatch = url.match(/amazon\.(\w+(?:\.\w+)?)\/(?:.*?\/)?(?:dp|product|gp\/product)\/([A-Z0-9]{10})/i);
   if (amazonMatch) {
     const domain = amazonMatch[1];
     const asin = amazonMatch[2];
@@ -84,16 +136,15 @@ function getReviewPageUrls(url: string, maxPages: number): string[] {
     );
   }
 
-  // Flipkart
+  // Flipkart - try to get the reviews page
   const flipkartMatch = url.match(/(flipkart\.com\/.+?\/p\/[a-z0-9]+)/i);
   if (flipkartMatch) {
     const base = flipkartMatch[1];
     return Array.from({ length: maxPages }, (_, i) =>
-      `https://www.${base}/product-reviews/pid?page=${i + 1}&sortOrder=MOST_RECENT`
+      `https://www.${base}&page=${i + 1}`
     );
   }
 
-  // Generic: just the original URL
   return [url];
 }
 
@@ -153,13 +204,11 @@ Deno.serve(async (req) => {
 
     console.log('Scraping product reviews from:', formattedUrl);
 
-    // Get up to 5 pages of reviews for known sites
     const pageUrls = getReviewPageUrls(formattedUrl, 5);
     let allReviews: string[] = [];
     let pageTitle = '';
     const seen = new Set<string>();
 
-    // Scrape pages sequentially (to avoid rate limits), stop when no new reviews found
     for (let i = 0; i < pageUrls.length; i++) {
       try {
         console.log(`Scraping page ${i + 1}/${pageUrls.length}: ${pageUrls[i]}`);
@@ -169,7 +218,7 @@ Deno.serve(async (req) => {
         const reviews = extractReviews(markdown);
         let newCount = 0;
         for (const r of reviews) {
-          const key = r.slice(0, 60).toLowerCase();
+          const key = r.slice(0, 80).toLowerCase();
           if (!seen.has(key)) {
             seen.add(key);
             allReviews.push(r);
@@ -179,21 +228,19 @@ Deno.serve(async (req) => {
 
         console.log(`Page ${i + 1}: found ${reviews.length} reviews, ${newCount} new`);
 
-        // If no new reviews on this page, stop paginating
         if (newCount === 0 && i > 0) {
           console.log('No new reviews found, stopping pagination');
           break;
         }
       } catch (err) {
         console.warn(`Failed page ${i + 1}:`, err);
-        // If first page fails, try original URL as fallback
         if (i === 0 && pageUrls[0] !== formattedUrl) {
           try {
             const { markdown, title } = await scrapePage(apiKey, formattedUrl);
             if (!pageTitle && title) pageTitle = title;
             const reviews = extractReviews(markdown);
             for (const r of reviews) {
-              const key = r.slice(0, 60).toLowerCase();
+              const key = r.slice(0, 80).toLowerCase();
               if (!seen.has(key)) { seen.add(key); allReviews.push(r); }
             }
           } catch (_) { /* skip */ }
