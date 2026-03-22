@@ -16,68 +16,77 @@ function cleanText(text: string): string {
 }
 
 function isJunkContent(text: string): boolean {
-  const junkPatterns = [
-    // Navigation / UI
-    /^(home|menu|sign in|log in|cart|wishlist|footer|header|nav|hello)/i,
-    /sign up|create.*account|new customer|become a seller/i,
-    /notification|preferences|customer care|advertise|download app/i,
-    /my profile|my orders|gift cards|rewards/i,
-    /select (delivery|your) location/i,
-    /delivering to|update location/i,
-    /add to (cart|wish|bag)|buy now/i,
+  const junk = [
+    /sign (up|in)|create.*account|new customer|become a seller/i,
+    /notification|customer care|advertise|download app/i,
+    /my (profile|orders|account)|gift cards|rewards|wishlist/i,
+    /select (delivery|your|the department)|delivering to|update location/i,
+    /add to (cart|wish|bag)|buy now|add to wishlist/i,
     /account & lists|returns.*orders/i,
-    /wish list|wish from any/i,
-    /your (account|orders|recommendations|prime)/i,
-    // E-commerce boilerplate
     /fulfilled by|sold by|cash on.*delivery/i,
-    /return(s|able)|refund|replacement|warranty|eligible for/i,
-    /contact us|about us|careers|press|corporate/i,
-    /payments|shipping|cancellation/i,
-    /flipkart internet|registered office|telephone:|tel:/i,
+    /return(s|able|ing)|refund|replacement|warranty|eligible for/i,
+    /contact us|about us|careers|press|corporate|registered office/i,
+    /payments|shipping|cancellation|telephone:|tel:/i,
     /cookie|privacy policy|terms of (use|service)|copyright/i,
-    // Product listings / ads
     /\d+%\s*OFF|₹\s*\d+.*₹\s*\d+|hot deal|bestseller/i,
-    /AD\s+\d+\.\d+/i,
-    // UI elements
-    /to move between items/i,
-    /main content.*about this item/i,
-    /click to see full view/i,
-    /visit the.*store/i,
-    /tap on the category/i,
-    /360.*view/i,
-    /select the department/i,
-    /all categories/i,
+    /to move between items|click to see|visit the.*store/i,
+    /tap on the category|360.*view|all categories/i,
     /explore more|similar items|compare with/i,
     /ratings and reviews|based on \d+.*ratings/i,
-    /features customers loved/i,
-    /questions and answers/i,
-    /be the first to ask/i,
-    /no questions.*available/i,
-    /show all reviews/i,
-    /\.(jpg|png|gif|svg|webp|css|js)\b/i,
-    /captcha|recaptcha/i,
-    /^Rs\.\s*\d+|^₹\s*\d+/i,
-    /^cargo\s*style/i,
-    /looking for something.*web address/i,
-    /go back to.*home page/i,
+    /features customers loved|questions and answers/i,
+    /be the first to (ask|review)|no questions.*available/i,
+    /show all reviews|see more product details/i,
+    /looking for something.*web address|go back to.*home page/i,
+    /report (an )?issue|your recently viewed/i,
+    /subscribe & save|manage your content/i,
+    /image (not available|unavailable)/i,
+    /view or edit your browsing/i,
+    /back to top|get to know us/i,
+    /scalable cloud|audio books|movies.*tv.*celebrities/i,
+    /make money with|product safety alerts/i,
+    /instagram|recalls and product/i,
+    /^sorry,? there was a problem/i,
+    /^›|^---/,
+    /we (work hard|don't (know|share))|your security/i,
+    /payment security|encrypts your information/i,
+    /credit card details|sell your information/i,
+    /after viewing product detail/i,
+    /navigate back to pages/i,
+    /^(brand|operating system|memory|screen size|resolution)\s/i,
   ];
+  for (const p of junk) if (p.test(text)) return true;
+  return false;
+}
 
-  for (const pattern of junkPatterns) {
-    if (pattern.test(text)) return true;
-  }
+function isProductDescription(text: string): boolean {
+  // Product feature descriptions (manufacturer copy)
+  const descPatterns = [
+    /^[A-Z][A-Z\s]+—/,  // "DYNAMIC ISLAND COMES TO IPHONE 15 —"
+    /^(classic|stylish|easy care|regular fit|clean look|featuring a|designed with|made from|with a regular)/i,
+    /these (women's|men's|jeans|pants|shirts)/i,
+    /comfortably at the natural waistline/i,
+    /machine wash/i,
+    /high-quality (denim|fabric|material)/i,
+  ];
+  for (const p of descPatterns) if (p.test(text)) return true;
   return false;
 }
 
 function isActualReview(text: string): boolean {
-  if (text.length < 20 || text.length > 5000) return false;
+  if (text.length < 15 || text.length > 3000) return false;
   const words = text.split(/\s+/).filter(w => w.length > 1);
-  if (words.length < 4) return false;
+  if (words.length < 3) return false;
   if (isJunkContent(text)) return false;
+  if (isProductDescription(text)) return false;
 
-  // Must have opinion/experience indicators to be a review
-  const reviewSignals = /good|great|nice|bad|worst|best|love|hate|awesome|terrible|excellent|amazing|poor|decent|okay|okay|fine|happy|disappointed|recommend|perfect|waste|worth|quality|comfortable|beautiful|ugly|fast|slow|broke|works|stopped|issue|problem|satisfied|better|worse|fantastic|horrible|outstanding|mediocre|superb|awful|delighted|annoyed|pleased|frustr|bought|purchased|using|ordered|received|delivered|arrived|tried|tested|experience|product|item|service|money|price|value|expected|durable|sturdy|flimsy|cheap|premium|genuine|fake|original|super|sucks|loved|loving|liking|liked|dislike|enjoy|pleased|impressed|unimpressed|overpriced|underrated|overrated|solid|reliable|unreliable|smooth|rough|comfortable|uncomfortable|fit|fits|fitting|size|color|colour|look|looks|looking|feel|feels|feeling|smell|smells|taste|sound|sounds|working|broken|damaged|defective|perfect|imperfect|clean|dirty|fresh|stale|strong|weak|heavy|light|bright|dark|warm|cool|hot|cold|soft|hard|easy|difficult|simple|complex|cheap|expensive|affordable|costly|budget|luxur|classy|elegant|stylish|modern|classic|vintage|trendy|stylish|beautiful|ugly|pretty|cute|handsome|gorgeous|stunning|striking|attractive|unattractive|pleased|displeased|content|discontent|gratif|disappoint/i;
+  // Must contain personal opinion/experience language
+  const firstPerson = /\b(i |i'|my |me |we |our |i've|i'd|i'm|mine)\b/i.test(text);
+  const opinion = /\b(good|great|nice|bad|worst|best|love|hate|awesome|terrible|excellent|amazing|poor|decent|okay|fine|happy|disappointed|recommend|perfect|waste|worth|comfortable|beautiful|ugly|fantastic|horrible|outstanding|mediocre|superb|awful|pleased|annoyed|impressed|overpriced|solid|reliable|smooth|rough|sturdy|flimsy|genuine|fake|sucks|loved|dislike|enjoy|delighted)\b/i.test(text);
+  const experience = /\b(bought|purchased|ordered|received|delivered|arrived|tried|tested|using|used|works|working|stopped|broke|broken|damaged)\b/i.test(text);
+  const emoji = /[😀-🙏👍👎💯❤️🔥⭐🌟😍😡😢😊😤😭🙄👌👏💪🎉✨😎😐😑😂🤣🥰🥺🤮🤢😋🤔]/u.test(text);
+  const rating = /\b\d\s*\/\s*5\b|\b\d\s*out of\s*5\b|\bstars?\b|\b★/i.test(text);
 
-  return reviewSignals.test(text);
+  return firstPerson || opinion || experience || emoji || rating;
 }
 
 function extractReviews(markdown: string): string[] {
@@ -93,13 +102,9 @@ function extractReviews(markdown: string): string[] {
     }
   };
 
-  // Split by paragraph blocks
   for (const block of markdown.split(/\n{2,}/)) addReview(block);
-
-  // Split by list items
   for (const item of markdown.split(/\n[-•*]\s/)) addReview(item);
 
-  // Combine consecutive lines
   let buffer = '';
   for (const line of markdown.split('\n')) {
     const trimmed = line.trim();
@@ -115,12 +120,10 @@ function extractReviews(markdown: string): string[] {
 }
 
 function getReviewPageUrls(url: string, maxPages: number): string[] {
-  // Amazon — scrape the product page itself first, then try review pages
   const amazonMatch = url.match(/amazon\.(\w+(?:\.\w+)?)\/(?:.*?\/)?(?:dp|product|gp\/product)\/([A-Z0-9]{10})/i);
   if (amazonMatch) {
     const domain = amazonMatch[1];
     const asin = amazonMatch[2];
-    // Start with the product page (most reliable), then add review pages
     const urls = [url];
     for (let i = 1; i <= Math.min(maxPages - 1, 4); i++) {
       urls.push(`https://www.amazon.${domain}/product-reviews/${asin}?reviewerType=all_reviews&sortBy=recent&pageNumber=${i}`);
@@ -128,7 +131,6 @@ function getReviewPageUrls(url: string, maxPages: number): string[] {
     return urls;
   }
 
-  // Flipkart
   const flipkartMatch = url.match(/(flipkart\.com\/.+?\/p\/[a-z0-9]+)/i);
   if (flipkartMatch) {
     const base = flipkartMatch[1];
@@ -156,9 +158,7 @@ async function scrapePage(apiKey: string, targetUrl: string): Promise<{ markdown
   });
 
   const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data.error || `Status ${response.status}`);
-  }
+  if (!response.ok) throw new Error(data.error || `Status ${response.status}`);
 
   return {
     markdown: data.data?.markdown || data.markdown || '',
@@ -173,7 +173,6 @@ Deno.serve(async (req) => {
 
   try {
     const { url } = await req.json();
-
     if (!url) {
       return new Response(
         JSON.stringify({ success: false, error: 'URL is required' }),
@@ -197,7 +196,7 @@ Deno.serve(async (req) => {
     console.log('Scraping product reviews from:', formattedUrl);
 
     const pageUrls = getReviewPageUrls(formattedUrl, 5);
-    let allReviews: string[] = [];
+    const allReviews: string[] = [];
     let pageTitle = '';
     const seen = new Set<string>();
 
@@ -217,17 +216,11 @@ Deno.serve(async (req) => {
             newCount++;
           }
         }
-
         console.log(`Page ${i + 1}: found ${reviews.length} reviews, ${newCount} new`);
-
-        if (newCount === 0 && i > 0) {
-          console.log('No new reviews found, stopping pagination');
-          break;
-        }
+        if (newCount === 0 && i > 0) { console.log('No new reviews, stopping'); break; }
       } catch (err) {
         console.warn(`Failed page ${i + 1}:`, err);
         if (i === 0) break;
-        // For subsequent pages, just skip and continue
         continue;
       }
     }
@@ -247,9 +240,8 @@ Deno.serve(async (req) => {
     );
   } catch (error) {
     console.error('Error scraping reviews:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Failed to scrape reviews';
     return new Response(
-      JSON.stringify({ success: false, error: errorMessage }),
+      JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Failed to scrape reviews' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
