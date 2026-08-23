@@ -185,8 +185,17 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const userId = await getAuthenticatedUserId(req);
+  if (!userId) {
+    return new Response(
+      JSON.stringify({ success: false, error: 'Authentication required' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
   try {
     const { url } = await req.json();
+
     if (!url) {
       return new Response(
         JSON.stringify({ success: false, error: 'URL is required' }),
