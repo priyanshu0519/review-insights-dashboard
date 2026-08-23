@@ -1,3 +1,5 @@
+import { getAuthenticatedUserId } from '../_shared/auth.ts';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
@@ -10,9 +12,18 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const userId = await getAuthenticatedUserId(req);
+  if (!userId) {
+    return new Response(
+      JSON.stringify({ success: false, error: 'Authentication required' }),
+      { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
   try {
     const body = await req.json();
     const reviews: string[] = body.reviews;
+
 
     if (!reviews || !Array.isArray(reviews) || reviews.length === 0) {
       return new Response(
