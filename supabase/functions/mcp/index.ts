@@ -98,11 +98,10 @@ var get_analysis_session_default = defineTool2({
     const { data, error } = await supabaseForUser(ctx).from("analysis_sessions").select("*").eq("id", id).maybeSingle();
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     if (!data) return { content: [{ type: "text", text: "No analysis session found with that id." }], isError: true };
-    const session = { ...data };
-    if (!include_predictions) delete session.predictions;
+    const { predictions, ...rest } = data;
+    const session = include_predictions ? { ...rest, predictions } : rest;
     return {
-      content: [{ type: "text", text: JSON.stringify(session, null, 2) }],
-      structuredContent: { session }
+      content: [{ type: "text", text: JSON.stringify(session, null, 2) }]
     };
   }
 });
