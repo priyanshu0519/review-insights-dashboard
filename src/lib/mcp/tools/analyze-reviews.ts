@@ -1,6 +1,6 @@
 import { defineTool, type ToolContext } from "@lovable.dev/mcp-js";
 import { z } from "zod";
-import { supabaseForUser, unauthenticated } from "../supabase";
+import { supabaseForUser, supabaseProjectUrl, supabasePublishableKey, unauthenticated } from "../supabase";
 
 export default defineTool({
   name: "analyze_reviews",
@@ -15,11 +15,8 @@ export default defineTool({
   handler: async ({ reviews, title }, ctx: ToolContext) => {
     if (!ctx.isAuthenticated()) return unauthenticated();
 
-    const baseUrl = process.env.SUPABASE_URL;
-    const anonKey = process.env.SUPABASE_PUBLISHABLE_KEY;
-    if (!baseUrl || !anonKey) {
-      return { content: [{ type: "text", text: "Backend is not configured." }], isError: true };
-    }
+    const baseUrl = supabaseProjectUrl();
+    const anonKey = supabasePublishableKey();
 
     const res = await fetch(`${baseUrl}/functions/v1/analyze-sentiment`, {
       method: "POST",
