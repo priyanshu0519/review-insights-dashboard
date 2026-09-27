@@ -27,12 +27,11 @@ export default defineTool({
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     if (!data) return { content: [{ type: "text", text: "No analysis session found with that id." }], isError: true };
 
-    const session: Record<string, unknown> = { ...data };
-    if (!include_predictions) delete session.predictions;
+    const { predictions, ...rest } = data;
+    const session = include_predictions ? { ...rest, predictions } : rest;
 
     return {
       content: [{ type: "text", text: JSON.stringify(session, null, 2) }],
-      structuredContent: { session },
     };
   },
 });
